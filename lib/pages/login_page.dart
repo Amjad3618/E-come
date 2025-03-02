@@ -1,3 +1,5 @@
+import 'package:e_com_1/widgets/email_form.dart';
+import 'package:e_com_1/widgets/password_form.dart' show PasswordTextField;
 import 'package:flutter/material.dart';
 
 class LoginPage extends StatelessWidget {
@@ -5,6 +7,16 @@ class LoginPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold();
+    TextEditingController emailController = TextEditingController();
+    TextEditingController passwordController = TextEditingController();
+    return Scaffold(
+      body: Column(
+        children: [
+          EmailTextField(controller: emailController),
+          PasswordTextField(controller: passwordController)
+           
+        ],
+      ),
+    );
   }
 }
