@@ -2,8 +2,13 @@ import 'package:flutter/material.dart';
 
 class EmailTextField extends StatelessWidget {
   final TextEditingController controller;
+  final String hintText; // Add a hintText parameter
 
-  const EmailTextField({super.key, required this.controller});
+  const EmailTextField({
+    super.key,
+    required this.controller,
+    required this.hintText, // Receive hintText
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -12,7 +17,7 @@ class EmailTextField extends StatelessWidget {
       keyboardType: TextInputType.emailAddress,
       decoration: InputDecoration(
         prefixIcon: const Icon(Icons.email, color: Colors.grey),
-        hintText: 'Enter your email',
+        hintText: hintText, // Use the dynamic hintText here
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
         focusedBorder: OutlineInputBorder(
           borderSide: const BorderSide(color: Colors.blue, width: 2),
