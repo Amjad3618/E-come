@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../utils/color.dart';
 import '../widgets/email_form.dart';
 import '../widgets/fancy)btn.dart';
 import '../widgets/fancy_text.dart';
@@ -26,6 +27,7 @@ class ForgotPasswordScreen extends StatelessWidget {
           children: [
             // Header
             const CustomText(
+               color: AppColors.textPrimary,
               text: 'Forgot Password',
               fontSize: 28,
               fontWeight: FontWeight.bold,
@@ -35,14 +37,15 @@ class ForgotPasswordScreen extends StatelessWidget {
             
             // Description
             const CustomText(
+               color: AppColors.textPrimary,
               text: 'Enter your email address. We will send you a link to reset your password.',
               fontSize: 16,
-              textColor: Colors.grey,
+             
             ),
             const SizedBox(height: 40),
             
             // Email field - using your existing email form field
-            EmailTextField(controller: emailController,hintText: "Email",),
+            EmailTextField(controller: emailController,hintText: "Email",prefixIcon: Icon(Icons.email),),
             const SizedBox(height: 40),
             
             // Reset button
@@ -103,8 +106,9 @@ class ForgotPasswordScreen extends StatelessWidget {
               child: GestureDetector(
                 onTap: () => Navigator.pop(context),
                 child: const CustomText(
+                  color: AppColors.textPrimary,
                   text: 'Remember password? Back to Login',
-                  textColor: Colors.blue,
+               
                   fontSize: 16,
                 ),
               ),

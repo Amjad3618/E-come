@@ -1,10 +1,10 @@
+import 'package:e_com_1/utils/color.dart';
 import 'package:flutter/material.dart';
 
 class CustomText extends StatelessWidget {
   final String text;
   final double? fontSize;
   final FontWeight? fontWeight;
-  final Color? textColor;
   final TextAlign textAlign;
   final bool isGradient;
   final Color? gradientColorStart;
@@ -20,7 +20,6 @@ class CustomText extends StatelessWidget {
     required this.text,
     this.fontSize = 16.0,
     this.fontWeight = FontWeight.normal,
-    this.textColor = Colors.black,
     this.textAlign = TextAlign.left,
     this.isGradient = false,
     this.gradientColorStart = const Color(0xFF6A5AE0),
@@ -29,7 +28,7 @@ class CustomText extends StatelessWidget {
     this.overflow,
     this.maxLines,
     this.letterSpacing,
-    this.decoration,
+    this.decoration, required Color color,
   }) : super(key: key);
 
   @override
@@ -37,10 +36,10 @@ class CustomText extends StatelessWidget {
     final TextStyle textStyle = TextStyle(
       fontSize: fontSize,
       fontWeight: fontWeight,
-      color: isGradient ? null : textColor,
+      color: isGradient ? null : AppColors.textPrimary,
       shadows: hasShadow ? [
         Shadow(
-          color: Colors.black.withOpacity(0.2),
+          color: AppColors.textPrimary.withOpacity(0.3),
           offset: const Offset(1, 1),
           blurRadius: 3,
         ),

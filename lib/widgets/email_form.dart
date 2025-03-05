@@ -7,7 +7,7 @@ class EmailTextField extends StatelessWidget {
   const EmailTextField({
     super.key,
     required this.controller,
-    required this.hintText, // Receive hintText
+    required this.hintText, required Icon prefixIcon, // Receive hintText
   });
 
   @override
