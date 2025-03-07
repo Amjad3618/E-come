@@ -5,7 +5,7 @@ class AppColors {
   static const Color primary = Colors.orange;
   static const Color primaryDark = Color(0xFFE65100); // Darker orange
   static const Color primaryLight = Color(0xFFFFCC80); // Lighter orange
-  
+  static const Color whitecolor = Colors.white;
   // Scaffold color
   static const Color scaffold = Colors.black;
   

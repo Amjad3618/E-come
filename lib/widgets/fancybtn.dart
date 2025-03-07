@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../utils/color.dart';
+
 class FancyButton extends StatefulWidget {
   final String text;
   final VoidCallback onPressed;
@@ -13,7 +15,7 @@ class FancyButton extends StatefulWidget {
     super.key,
     required this.text,
     required this.onPressed,
-    this.primaryColor = const Color(0xFF6A5AE0),
+    this.primaryColor = AppColors.primary,
     this.secondaryColor = const Color(0xFF9087E5),
     this.width = 240,
     this.height = 56,
@@ -36,7 +38,7 @@ class _FancyButtonState extends State<FancyButton> with SingleTickerProviderStat
       vsync: this,
       duration: const Duration(milliseconds: 200),
     );
-    _scaleAnimation = Tween<double>(begin: 1.0, end: 0.95).animate(
+    _scaleAnimation = Tween<double>(begin: 10.0, end: 10).animate(
       CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
     );
   }
@@ -80,14 +82,13 @@ class _FancyButtonState extends State<FancyButton> with SingleTickerProviderStat
               end: Alignment.bottomRight,
               colors: [
                 widget.secondaryColor,
-                widget.primaryColor,
+AppColors.primary,
               ],
             ),
             borderRadius: BorderRadius.circular(28),
             boxShadow: [
               BoxShadow(
-                color: widget.primaryColor.withOpacity(0.3),
-                blurRadius: _isPressed ? 5 : 15,
+color: AppColors.whitecolor.withOpacity(0.5),                blurRadius: _isPressed ? 5 : 15,
                 offset: _isPressed ? const Offset(0, 2) : const Offset(0, 8),
               ),
             ],

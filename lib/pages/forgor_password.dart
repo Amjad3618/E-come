@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../utils/color.dart';
 import '../widgets/email_form.dart';
-import '../widgets/fancy)btn.dart';
+import '../widgets/fancybtn.dart';
 import '../widgets/fancy_text.dart';
 
 class ForgotPasswordScreen extends StatelessWidget {

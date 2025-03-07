@@ -1,12 +1,12 @@
 import 'package:e_com_1/widgets/custome_btn.dart' show CircularImageButton;
 import 'package:e_com_1/widgets/email_form.dart';
+import 'package:e_com_1/widgets/fancybtn.dart';
 import 'package:e_com_1/widgets/password_form.dart' show PasswordTextField;
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:lottie/lottie.dart';
 
 import '../utils/color.dart';
-import '../widgets/fancy)btn.dart';
 import '../widgets/fancy_text.dart';
 import 'forgor_password.dart';
 import 'singup_page.dart';
@@ -144,6 +144,7 @@ class LoginPage extends StatelessWidget {
                       text: 'Login',
                       onPressed: () {
                         // Login logic
+                        // Get.to(BottomNavController())
                       },
                     ),
                   ),

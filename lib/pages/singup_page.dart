@@ -1,6 +1,6 @@
 import 'package:e_com_1/widgets/custome_btn.dart' show CircularImageButton;
 import 'package:e_com_1/widgets/email_form.dart';
-import 'package:e_com_1/widgets/fancy)btn.dart';
+import 'package:e_com_1/widgets/fancybtn.dart';
 import 'package:e_com_1/widgets/password_form.dart' show PasswordTextField;
 import 'package:flutter/material.dart';
 import 'package:lottie/lottie.dart';
