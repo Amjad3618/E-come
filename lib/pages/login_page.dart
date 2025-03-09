@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:lottie/lottie.dart';
 
+import '../bottom_nav/bottom_nav.dart' show BottomNavController, BottomNavScreen;
 import '../utils/color.dart';
 import '../widgets/fancy_text.dart';
 import 'forgor_password.dart';
@@ -144,7 +145,8 @@ class LoginPage extends StatelessWidget {
                       text: 'Login',
                       onPressed: () {
                         // Login logic
-                        // Get.to(BottomNavController())
+                       Get.to(() => BottomNavScreen());
+                        // Get.to(SignUpPage());
                       },
                     ),
                   ),

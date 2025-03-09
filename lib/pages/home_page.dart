@@ -174,8 +174,8 @@ class _HomeScreenState extends State<HomeScreen> {
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
                               color: _currentPage == index
-                                  ? Colors.white
-                                  : Colors.white.withOpacity(0.5),
+                                  ? AppColors.primaryDark
+                                  : Colors.black.withOpacity(0.5),
                             ),
                           ),
                         ),

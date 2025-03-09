@@ -2,12 +2,14 @@ import 'package:flutter/material.dart';
 
 class EmailTextField extends StatelessWidget {
   final TextEditingController controller;
-  final String hintText; // Add a hintText parameter
+  final String hintText;
+  final Icon prefixIcon;
 
   const EmailTextField({
     super.key,
     required this.controller,
-    required this.hintText, required Icon prefixIcon, // Receive hintText
+    required this.hintText,
+    required this.prefixIcon,
   });
 
   @override
@@ -15,9 +17,14 @@ class EmailTextField extends StatelessWidget {
     return TextFormField(
       controller: controller,
       keyboardType: TextInputType.emailAddress,
+      style: const TextStyle(
+        color: Colors.black,
+        fontSize: 16.0,
+      ),
       decoration: InputDecoration(
-        prefixIcon: const Icon(Icons.email, color: Colors.grey),
-        hintText: hintText, // Use the dynamic hintText here
+        prefixIcon: prefixIcon,
+        hintText: hintText,
+        hintStyle: TextStyle(color: Colors.grey[600]),
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
         focusedBorder: OutlineInputBorder(
           borderSide: const BorderSide(color: Colors.blue, width: 2),
@@ -25,6 +32,7 @@ class EmailTextField extends StatelessWidget {
         ),
         filled: true,
         fillColor: Colors.grey[200],
+        contentPadding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 16.0),
       ),
       validator: (value) {
         if (value == null || value.isEmpty) {

@@ -38,7 +38,7 @@ class _FancyButtonState extends State<FancyButton> with SingleTickerProviderStat
       vsync: this,
       duration: const Duration(milliseconds: 200),
     );
-    _scaleAnimation = Tween<double>(begin: 10.0, end: 10).animate(
+    _scaleAnimation = Tween<double>(begin: 1.0, end: 0.95).animate(
       CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
     );
   }
@@ -71,8 +71,9 @@ class _FancyButtonState extends State<FancyButton> with SingleTickerProviderStat
         });
         _controller.reverse();
       },
-      child: ScaleTransition(
-        scale: _scaleAnimation,
+      child: AnimatedScale(
+        scale: _isPressed ? 0.95 : 1.0,
+        duration: const Duration(milliseconds: 200),
         child: Container(
           width: widget.width,
           height: widget.height,
@@ -81,14 +82,15 @@ class _FancyButtonState extends State<FancyButton> with SingleTickerProviderStat
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: [
+                widget.primaryColor,
                 widget.secondaryColor,
-AppColors.primary,
               ],
             ),
             borderRadius: BorderRadius.circular(28),
             boxShadow: [
               BoxShadow(
-color: AppColors.whitecolor.withOpacity(0.5),                blurRadius: _isPressed ? 5 : 15,
+                color: widget.primaryColor.withOpacity(0.3),
+                blurRadius: _isPressed ? 5 : 15,
                 offset: _isPressed ? const Offset(0, 2) : const Offset(0, 8),
               ),
             ],

@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 
 class PasswordTextField extends StatefulWidget {
@@ -18,9 +17,14 @@ class _PasswordTextFieldState extends State<PasswordTextField> {
     return TextFormField(
       controller: widget.controller,
       obscureText: _isObscure,
+      style: const TextStyle(
+        color: Colors.black,
+        fontSize: 16.0,
+      ),
       decoration: InputDecoration(
-        prefixIcon: const Icon(Icons.lock, color: Colors.grey),
+        prefixIcon: const Icon(Icons.lock, color: Colors.orange),
         hintText: 'Enter your password',
+        hintStyle: TextStyle(color: Colors.grey[600]),
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
         focusedBorder: OutlineInputBorder(
           borderSide: const BorderSide(color: Colors.blue, width: 2),
@@ -28,10 +32,11 @@ class _PasswordTextFieldState extends State<PasswordTextField> {
         ),
         filled: true,
         fillColor: Colors.grey[200],
+        contentPadding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 16.0),
         suffixIcon: IconButton(
           icon: Icon(
             _isObscure ? Icons.visibility_off : Icons.visibility,
-            color: Colors.grey,
+            color: Colors.orange,
           ),
           onPressed: () {
             setState(() {

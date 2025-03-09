@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:get/get_core/src/get_main.dart';
 import '../utils/color.dart';
 import '../widgets/email_form.dart';
 import '../widgets/fancybtn.dart';
@@ -27,7 +29,8 @@ class ForgotPasswordScreen extends StatelessWidget {
           children: [
             // Header
             const CustomText(
-               color: AppColors.textPrimary,
+               color: AppColors.scaffold,
+               
               text: 'Forgot Password',
               fontSize: 28,
               fontWeight: FontWeight.bold,
@@ -58,7 +61,7 @@ class ForgotPasswordScreen extends StatelessWidget {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(content: Text('Please enter your email')),
                     );
-                    return;
+                  
                   }
                   
                   // Show loading dialog
@@ -73,7 +76,7 @@ class ForgotPasswordScreen extends StatelessWidget {
                   // Simulate API call with delay
                   Future.delayed(const Duration(seconds: 2), () {
                     // Close loading dialog
-                    Navigator.pop(context);
+                   Get.back();
                     
                     // Show success dialog
                     showDialog(
@@ -81,7 +84,7 @@ class ForgotPasswordScreen extends StatelessWidget {
                       builder: (context) => AlertDialog(
                         title: const Text('Email Sent'),
                         content: Text(
-                          'Password reset link has been sent to ${emailController.text}',
+                          'Password reset link has been sent to ${emailController.text}',style: TextStyle(color: Colors.black),
                         ),
                         actions: [
                           TextButton(
