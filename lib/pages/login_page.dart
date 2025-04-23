@@ -6,19 +6,80 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:lottie/lottie.dart';
 
+// Import AuthServices
+import '../services/auth_services.dart';
+
+// ignore: unused_shown_name
 import '../bottom_nav/bottom_nav.dart' show BottomNavController, BottomNavScreen;
 import '../utils/color.dart';
 import '../widgets/fancy_text.dart';
 import 'forgor_password.dart';
 import 'singup_page.dart';
 
-class LoginPage extends StatelessWidget {
+class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
 
   @override
+  State<LoginPage> createState() => _LoginPageState();
+}
+
+class _LoginPageState extends State<LoginPage> {
+  @override
   Widget build(BuildContext context) {
+    // Controllers for form fields
     TextEditingController emailController = TextEditingController();
     TextEditingController passwordController = TextEditingController();
+    
+    // Get instance of AuthServices
+    final AuthServices authServices = Get.put(AuthServices());    
+    // Function to handle login
+    void handleLogin() async {
+      // Validate input fields
+      if (emailController.text.isEmpty || passwordController.text.isEmpty) {
+        Get.snackbar(
+          'Error',
+          'Please enter both email and password',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.red,
+          colorText: Colors.white,
+        );
+        return;
+      }
+      
+      // Call sign in method from AuthServices
+      await authServices.signIn(
+        email: emailController.text.trim(),
+        password: passwordController.text,
+      );
+      
+      // Check if there's no error and user is logged in
+      if (authServices.errorMessage.value.isEmpty && authServices.user != null) {
+        // Navigate to home screen
+        Get.offAll(() => BottomNavScreen());
+      }
+    }
+    
+    // Function to handle Google sign-in
+    void handleGoogleSignIn() async {
+      await authServices.signInWithGoogle();
+      
+      // Check if user is logged in
+      if (authServices.user != null) {
+        // Navigate to home screen
+        Get.offAll(() => BottomNavScreen());
+      }
+    }
+    
+    // Function to handle Facebook sign-in
+    void handleFacebookSignIn() async {
+      await authServices.signInWithFacebook();
+      
+      // Check if user is logged in
+      if (authServices.user != null) {
+        // Navigate to home screen
+        Get.offAll(() => BottomNavScreen());
+      }
+    }
     
     return Scaffold(
       body: Container(
@@ -112,7 +173,7 @@ class LoginPage extends StatelessWidget {
                     children: [
                       TextButton(
                         onPressed: () {
-                          Get.to(ForgotPasswordScreen());
+                          Get.to(() => ForgotPasswordScreen());
                         },
                         style: TextButton.styleFrom(
                           foregroundColor: AppColors.primary,
@@ -128,8 +189,8 @@ class LoginPage extends StatelessWidget {
                   ),
                   const SizedBox(height: 30),
                   
-                  // Login button with improved style
-                  Container(
+                  // Login button with improved style - Now with authentication logic
+                  Obx(() => Container(
                     width: double.infinity,
                     height: 55,
                     decoration: BoxDecoration(
@@ -141,15 +202,13 @@ class LoginPage extends StatelessWidget {
                         ),
                       ],
                     ),
-                    child: FancyButton(
-                      text: 'Login',
-                      onPressed: () {
-                        // Login logic
-                       Get.to(() => BottomNavScreen());
-                        // Get.to(SignUpPage());
-                      },
-                    ),
-                  ),
+                    child: authServices.isLoading.value 
+                      ? Center(child: CircularProgressIndicator(color: AppColors.primary))
+                      : FancyButton(
+                          text: 'Login',
+                          onPressed: handleLogin,
+                        ),
+                  )),
                   
                   const SizedBox(height: 24),
                   
@@ -179,7 +238,7 @@ class LoginPage extends StatelessWidget {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        // Google
+                        // Google - Updated with auth logic
                         Container(
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
@@ -193,11 +252,11 @@ class LoginPage extends StatelessWidget {
                           ),
                           child: CircularImageButton(
                             imagePath: 'assets/images/google.png',
-                            onPressed: () {},
+                            onPressed: handleGoogleSignIn,
                           ),
                         ),
                         const SizedBox(width: 40),
-                        // Apple
+                        // Facebook - Updated with auth logic
                         Container(
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
@@ -211,7 +270,7 @@ class LoginPage extends StatelessWidget {
                           ),
                           child: CircularImageButton(
                             imagePath: 'assets/images/facebook.png',
-                            onPressed: () {},
+                            onPressed: handleFacebookSignIn,
                           ),
                         ),
                       ],
@@ -236,7 +295,7 @@ class LoginPage extends StatelessWidget {
                         ),
                         TextButton(
                           onPressed: () {
-                            Get.to(const SignUpPage());
+                            Get.to(() => SignUpPage());
                           },
                           style: TextButton.styleFrom(
                             foregroundColor: AppColors.primary,

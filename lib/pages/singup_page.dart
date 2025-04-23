@@ -1,22 +1,29 @@
-import 'package:e_com_1/widgets/custome_btn.dart' show CircularImageButton;
+// ignore_for_file: deprecated_member_use
+
+import 'package:e_com_1/services/auth_services.dart';
+import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:lottie/lottie.dart';
+import 'package:e_com_1/widgets/custome_btn.dart';
 import 'package:e_com_1/widgets/email_form.dart';
 import 'package:e_com_1/widgets/fancybtn.dart';
-import 'package:e_com_1/widgets/password_form.dart' show PasswordTextField;
-import 'package:flutter/material.dart';
-import 'package:lottie/lottie.dart';
-
-import '../utils/color.dart';
-import '../widgets/fancy_text.dart';
+import 'package:e_com_1/widgets/password_form.dart';
+import 'package:e_com_1/utils/color.dart';
+import 'package:e_com_1/widgets/fancy_text.dart';
 
 class SignUpPage extends StatelessWidget {
   const SignUpPage({super.key});
 
   @override
   Widget build(BuildContext context) {
+    // Initialize controllers
     TextEditingController nameController = TextEditingController();
     TextEditingController emailController = TextEditingController();
     TextEditingController passwordController = TextEditingController();
     TextEditingController confirmPasswordController = TextEditingController();
+    
+    // Get instance of AuthController
+    final AuthServices authController = Get.put(AuthServices());
     
     return Scaffold(
       body: Container(
@@ -135,7 +142,6 @@ class SignUpPage extends StatelessWidget {
                       child: PasswordTextField(
                         controller: confirmPasswordController,
                         // labelText: "Confirm Password",
-                        
                       ),
                     ),
                   ),
@@ -153,7 +159,7 @@ class SignUpPage extends StatelessWidget {
                   const SizedBox(height: 32),
                   
                   // SignUp button with improved style
-                  Container(
+                  Obx(() => Container(
                     width: double.infinity,
                     height: 55,
                     decoration: BoxDecoration(
@@ -165,31 +171,61 @@ class SignUpPage extends StatelessWidget {
                         ),
                       ],
                     ),
-                    child: FancyButton(
-                      text: 'Sign Up',
-                      onPressed: () {
-                        // Validate and process signup
-                        if (nameController.text.isEmpty ||
-                            emailController.text.isEmpty ||
-                            passwordController.text.isEmpty ||
-                            confirmPasswordController.text.isEmpty) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Please fill all fields')),
-                          );
-                          return;
-                        }
-                        
-                        if (passwordController.text != confirmPasswordController.text) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Passwords do not match')),
-                          );
-                          return;
-                        }
-                        
-                        // Proceed with signup
-                      },
-                    ),
-                  ),
+                    child: authController.isLoading.value
+                        ? Container(
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [
+                                  AppColors.primary,
+                                  AppColors.primary.withOpacity(0.8),
+                                ],
+                              ),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: const Center(
+                              child: CircularProgressIndicator(
+                                color: Colors.white,
+                              ),
+                            ),
+                          )
+                        : FancyButton(
+                            text: 'Sign Up',
+                            onPressed: () async {
+                              // Validate and process signup
+                              if (nameController.text.isEmpty ||
+                                  emailController.text.isEmpty ||
+                                  passwordController.text.isEmpty ||
+                                  confirmPasswordController.text.isEmpty) {
+                                Get.snackbar(
+                                  'Error',
+                                  'Please fill all fields',
+                                  snackPosition: SnackPosition.BOTTOM,
+                                  backgroundColor: Colors.red,
+                                  colorText: Colors.white,
+                                );
+                                return;
+                              }
+                              
+                              if (passwordController.text != confirmPasswordController.text) {
+                                Get.snackbar(
+                                  'Error',
+                                  'Passwords do not match',
+                                  snackPosition: SnackPosition.BOTTOM,
+                                  backgroundColor: Colors.red,
+                                  colorText: Colors.white,
+                                );
+                                return;
+                              }
+                              
+                              // Proceed with signup
+                              await authController.signUp(
+                                name: nameController.text.trim(),
+                                email: emailController.text.trim(),
+                                password: passwordController.text.trim(),
+                              );
+                            },
+                          ),
+                  )),
                   const SizedBox(height: 20),
                   
                   // Divider with text
@@ -203,7 +239,7 @@ class SignUpPage extends StatelessWidget {
                         child: CustomText(
                           text: 'Or sign up with',
                           fontSize: 16,
- color: AppColors.textPrimary,                          
+                          color: AppColors.textPrimary,                          
                         ),
                       ),
                       const Expanded(
@@ -232,7 +268,20 @@ class SignUpPage extends StatelessWidget {
                           ),
                           child: CircularImageButton(
                             imagePath: 'assets/images/google.png',
-                            onPressed: () {},
+                            onPressed: () async {
+                              // Add Google Sign-In functionality here
+                              try {
+                                await authController.signInWithGoogle();
+                              } catch (e) {
+                                Get.snackbar(
+                                  'Error',
+                                  e.toString(),
+                                  snackPosition: SnackPosition.BOTTOM,
+                                  backgroundColor: Colors.red,
+                                  colorText: Colors.white,
+                                );
+                              }
+                            },
                           ),
                         ),
                         const SizedBox(width: 40),
@@ -250,7 +299,20 @@ class SignUpPage extends StatelessWidget {
                           ),
                           child: CircularImageButton(
                             imagePath: 'assets/images/facebook.png',
-                            onPressed: () {},
+                            onPressed: () async {
+                              // Add Facebook Sign-In functionality here
+                              try {
+                                await authController.signInWithFacebook();
+                              } catch (e) {
+                                Get.snackbar(
+                                  'Error',
+                                  e.toString(),
+                                  snackPosition: SnackPosition.BOTTOM,
+                                  backgroundColor: Colors.red,
+                                  colorText: Colors.white,
+                                );
+                              }
+                            },
                           ),
                         ),
                       ],
