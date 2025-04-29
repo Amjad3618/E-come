@@ -43,83 +43,85 @@ class AuthServices extends GetxController {
   }
   
   // Sign up with email and password
-  Future<void> signUp({
-    required String name,
-    required String email,
-    required String password,
-  }) async {
-    try {
-      isLoading(true);
-      errorMessage('');
-      
-      // Create user with email and password
-      UserCredential userCredential = await _auth.createUserWithEmailAndPassword(
-        email: email,
-        password: password,
-      );
-      
-      // Create user model
-      UserModel userModel = UserModel(
-        name: name,
-        email: email,
-        password: password,
-        confirmpassword: password,
-      );
-      
-      // Store user data in Firestore
-      await _firestore
-          .collection('Clients')
-          .doc(userCredential.user!.uid)
-          .set(userModel.toJson());
-      
-      // Update user display name
-      await userCredential.user!.updateDisplayName(name);
-      
-      // Show success message
-      Get.snackbar(
-        'Success',
-        'Account created successfully',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.green,
-        colorText: Colors.white,
-      );
-      
-      // Navigate to home screen or login screen
-      // Get.offAll(() => HomePage());
-      
-    } on FirebaseAuthException catch (e) {
-      String message = '';
-      if (e.code == 'weak-password') {
-        message = 'The password provided is too weak';
-      } else if (e.code == 'email-already-in-use') {
-        message = 'The account already exists for that email';
-      } else if (e.code == 'invalid-email') {
-        message = 'The email address is not valid';
-      } else {
-        message = e.message ?? 'An error occurred during sign up';
-      }
-      
-      errorMessage(message);
-      Get.snackbar(
-        'Error',
-        message,
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red,
-        colorText: Colors.white,
-      );
-    } catch (e) {
-      errorMessage(e.toString());
-      Get.snackbar(
-        'Error',
-        e.toString(),
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red,
-        colorText: Colors.white,
-      );
-    } finally {
-      isLoading(false);
+ // Sign up with email and password
+Future<void> signUp({
+  required String name,
+  required String email,
+  required String password,
+}) async {
+  try {
+    isLoading(true);
+    errorMessage('');
+
+    // Create user with email and password
+    UserCredential userCredential = await _auth.createUserWithEmailAndPassword(
+      email: email,
+      password: password,
+    );
+
+    // Get the UID from Firebase user
+    String uid = userCredential.user!.uid;
+
+    // Create the UserModel object with the UID
+    UserModel userModel = UserModel(
+      uid: uid,
+      name: name,
+      email: email,
+      password: "",
+      confirmpassword: "",
+    );
+
+    // Store user data in Firestore with UID as the document ID
+    await _firestore.collection('Clients').doc(uid).set(userModel.toJson());
+
+    // Update user display name
+    await userCredential.user!.updateDisplayName(name);
+
+    // Show success message
+    Get.snackbar(
+      'Success',
+      'Account created successfully',
+      snackPosition: SnackPosition.BOTTOM,
+      backgroundColor: Colors.green,
+      colorText: Colors.white,
+    );
+
+    // Navigate to home screen or login screen
+    // Get.offAll(() => HomePage());
+  } on FirebaseAuthException catch (e) {
+    String message = '';
+    if (e.code == 'weak-password') {
+      message = 'The password provided is too weak';
+    } else if (e.code == 'email-already-in-use') {
+      message = 'The account already exists for that email';
+    } else if (e.code == 'invalid-email') {
+      message = 'The email address is not valid';
+    } else {
+      message = e.message ?? 'An error occurred during sign up';
     }
+
+    errorMessage(message);
+    Get.snackbar(
+      'Error',
+      message,
+      snackPosition: SnackPosition.BOTTOM,
+      backgroundColor: Colors.red,
+      colorText: Colors.white,
+    );
+  } catch (e) {
+    errorMessage(e.toString());
+    Get.snackbar(
+      'Error',
+      e.toString(),
+      snackPosition: SnackPosition.BOTTOM,
+      backgroundColor: Colors.red,
+      colorText: Colors.white,
+    );
+  } finally {
+    isLoading(false);
   }
+}
+
   
   // Sign in with email and password
   Future<void> signIn({required String email, required String password}) async {

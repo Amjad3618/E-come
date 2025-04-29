@@ -5,14 +5,14 @@ import 'package:get/get.dart';
 import 'package:get/get_core/src/get_main.dart';
 import '../utils/color.dart';
 
-class CradPage extends StatefulWidget {
-  const CradPage({Key? key}) : super(key: key);
+class CartPage extends StatefulWidget {
+  const CartPage({Key? key}) : super(key: key);
 
   @override
-  State<CradPage> createState() => _CradPageState();
+  State<CartPage> createState() => _CartPageState();
 }
 
-class _CradPageState extends State<CradPage> {
+class _CartPageState extends State<CartPage> {
   // Sample cart items data
   final List<Map<String, dynamic>> _cartItems = [
     {

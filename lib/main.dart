@@ -1,10 +1,10 @@
 import 'package:e_com_1/pages/login_page.dart';
-import 'package:e_com_1/pages/home_page.dart'; // Import your home page
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get_navigation/src/root/get_material_app.dart';
 
+import 'bottom_nav/bottom_nav.dart'; // Contains BottomNavScreen
 import 'utils/color.dart';
 
 void main() async {
@@ -49,12 +49,13 @@ class AuthenticationWrapper extends StatelessWidget {
           if (user == null) {
             return LoginPage();
           } else {
-            return HomeScreen();
+            return BottomNavScreen(); // ✅ This is the correct widget to show
           }
         }
 
-        // Show a loading indicator while checking authentication state
-        return Scaffold(body: Center(child: CircularProgressIndicator()));
+        return Scaffold(
+          body: Center(child: CircularProgressIndicator()),
+        );
       },
     );
   }
