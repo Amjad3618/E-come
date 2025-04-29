@@ -199,7 +199,7 @@ class SignUpPage extends StatelessWidget {
                                 Get.snackbar(
                                   'Error',
                                   'Please fill all fields',
-                                  snackPosition: SnackPosition.BOTTOM,
+                                  snackPosition: SnackPosition.TOP,
                                   backgroundColor: Colors.red,
                                   colorText: Colors.white,
                                 );
@@ -210,7 +210,7 @@ class SignUpPage extends StatelessWidget {
                                 Get.snackbar(
                                   'Error',
                                   'Passwords do not match',
-                                  snackPosition: SnackPosition.BOTTOM,
+                                  snackPosition: SnackPosition.TOP,
                                   backgroundColor: Colors.red,
                                   colorText: Colors.white,
                                 );
@@ -276,7 +276,7 @@ class SignUpPage extends StatelessWidget {
                                 Get.snackbar(
                                   'Error',
                                   e.toString(),
-                                  snackPosition: SnackPosition.BOTTOM,
+                                  snackPosition: SnackPosition.TOP,
                                   backgroundColor: Colors.red,
                                   colorText: Colors.white,
                                 );
@@ -307,7 +307,7 @@ class SignUpPage extends StatelessWidget {
                                 Get.snackbar(
                                   'Error',
                                   e.toString(),
-                                  snackPosition: SnackPosition.BOTTOM,
+                                  snackPosition: SnackPosition.TOP,
                                   backgroundColor: Colors.red,
                                   colorText: Colors.white,
                                 );

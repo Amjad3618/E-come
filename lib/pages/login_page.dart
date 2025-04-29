@@ -6,11 +6,13 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:lottie/lottie.dart';
 
-// Import AuthServices
+// Import AuthServicezs
 import '../services/auth_services.dart';
 
 // ignore: unused_shown_name
-import '../bottom_nav/bottom_nav.dart' show BottomNavController, BottomNavScreen;
+import '../bottom_nav/bottom_nav.dart'
+    // ignore: unused_shown_name
+    show BottomNavController, BottomNavScreen;
 import '../utils/color.dart';
 import '../widgets/fancy_text.dart';
 import 'forgor_password.dart';
@@ -29,9 +31,9 @@ class _LoginPageState extends State<LoginPage> {
     // Controllers for form fields
     TextEditingController emailController = TextEditingController();
     TextEditingController passwordController = TextEditingController();
-    
+
     // Get instance of AuthServices
-    final AuthServices authServices = Get.put(AuthServices());    
+    final AuthServices authServices = Get.put(AuthServices());
     // Function to handle login
     void handleLogin() async {
       // Validate input fields
@@ -39,63 +41,64 @@ class _LoginPageState extends State<LoginPage> {
         Get.snackbar(
           'Error',
           'Please enter both email and password',
-          snackPosition: SnackPosition.BOTTOM,
+          snackPosition: SnackPosition.TOP,
           backgroundColor: Colors.red,
           colorText: Colors.white,
         );
         return;
       }
-      
+
       // Call sign in method from AuthServices
       await authServices.signIn(
         email: emailController.text.trim(),
         password: passwordController.text,
       );
-      
+
       // Check if there's no error and user is logged in
-      if (authServices.errorMessage.value.isEmpty && authServices.user != null) {
+      if (authServices.errorMessage.value.isEmpty &&
+          authServices.user != null) {
         // Navigate to home screen
         Get.offAll(() => BottomNavScreen());
       }
     }
-    
+
     // Function to handle Google sign-in
     void handleGoogleSignIn() async {
       await authServices.signInWithGoogle();
-      
+
       // Check if user is logged in
       if (authServices.user != null) {
         // Navigate to home screen
         Get.offAll(() => BottomNavScreen());
       }
     }
-    
+
     // Function to handle Facebook sign-in
     void handleFacebookSignIn() async {
       await authServices.signInWithFacebook();
-      
+
       // Check if user is logged in
       if (authServices.user != null) {
         // Navigate to home screen
         Get.offAll(() => BottomNavScreen());
       }
     }
-    
+
     return Scaffold(
       body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [
-              AppColors.scaffold.withOpacity(0.9),
-              AppColors.scaffold,
-            ],
+            colors: [AppColors.scaffold.withOpacity(0.9), AppColors.scaffold],
           ),
         ),
         child: SafeArea(
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
+            padding: const EdgeInsets.symmetric(
+              horizontal: 24.0,
+              vertical: 16.0,
+            ),
             child: SingleChildScrollView(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -113,12 +116,12 @@ class _LoginPageState extends State<LoginPage> {
                       ],
                     ),
                     child: Lottie.asset(
-                      'assets/animations/animaton1.json', 
+                      'assets/animations/animaton1.json',
                       height: 200,
                     ),
                   ),
                   const SizedBox(height: 30),
-                  
+
                   // Title
                   const CustomText(
                     text: 'Welcome Back',
@@ -127,7 +130,7 @@ class _LoginPageState extends State<LoginPage> {
                     color: AppColors.textPrimary,
                   ),
                   const SizedBox(height: 8),
-                  
+
                   // Subtitle
                   const CustomText(
                     text: 'Sign in to continue',
@@ -135,7 +138,7 @@ class _LoginPageState extends State<LoginPage> {
                     color: Colors.grey,
                   ),
                   const SizedBox(height: 32),
-                  
+
                   // Email field with card effect
                   Card(
                     elevation: 2,
@@ -146,14 +149,17 @@ class _LoginPageState extends State<LoginPage> {
                     child: Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 8.0),
                       child: EmailTextField(
-                        controller: emailController, 
+                        controller: emailController,
                         hintText: "Email Address",
-                        prefixIcon: const Icon(Icons.email, color: AppColors.primary),
+                        prefixIcon: const Icon(
+                          Icons.email,
+                          color: AppColors.primary,
+                        ),
                       ),
                     ),
                   ),
                   const SizedBox(height: 16),
-                  
+
                   // Password field with card effect
                   Card(
                     elevation: 2,
@@ -166,7 +172,7 @@ class _LoginPageState extends State<LoginPage> {
                       child: PasswordTextField(controller: passwordController),
                     ),
                   ),
-                  
+
                   // Forgot password
                   Row(
                     mainAxisAlignment: MainAxisAlignment.end,
@@ -188,30 +194,37 @@ class _LoginPageState extends State<LoginPage> {
                     ],
                   ),
                   const SizedBox(height: 30),
-                  
+
                   // Login button with improved style - Now with authentication logic
-                  Obx(() => Container(
-                    width: double.infinity,
-                    height: 55,
-                    decoration: BoxDecoration(
-                      boxShadow: [
-                        BoxShadow(
-                          color: AppColors.primary.withOpacity(0.4),
-                          blurRadius: 10,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
+                  Obx(
+                    () => Container(
+                      width: double.infinity,
+                      height: 55,
+                      decoration: BoxDecoration(
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppColors.primary.withOpacity(0.4),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child:
+                          authServices.isLoading.value
+                              ? Center(
+                                child: CircularProgressIndicator(
+                                  color: AppColors.primary,
+                                ),
+                              )
+                              : FancyButton(
+                                text: 'Login',
+                                onPressed: handleLogin,
+                              ),
                     ),
-                    child: authServices.isLoading.value 
-                      ? Center(child: CircularProgressIndicator(color: AppColors.primary))
-                      : FancyButton(
-                          text: 'Login',
-                          onPressed: handleLogin,
-                        ),
-                  )),
-                  
+                  ),
+
                   const SizedBox(height: 24),
-                  
+
                   // Divider with text
                   Row(
                     children: [
@@ -231,7 +244,7 @@ class _LoginPageState extends State<LoginPage> {
                       ),
                     ],
                   ),
-                  
+
                   // Social login options with improved spacing and effects
                   Padding(
                     padding: const EdgeInsets.symmetric(vertical: 24.0),
@@ -276,7 +289,7 @@ class _LoginPageState extends State<LoginPage> {
                       ],
                     ),
                   ),
-                  
+
                   // Don't have an account
                   Container(
                     padding: const EdgeInsets.all(12),

@@ -1,12 +1,14 @@
 import 'package:e_com_1/pages/login_page.dart';
+import 'package:e_com_1/pages/home_page.dart'; // Import your home page
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get_navigation/src/root/get_material_app.dart';
 
 import 'utils/color.dart';
 
-void main()async {
-   WidgetsFlutterBinding.ensureInitialized();
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
   runApp(MyApp());
 }
@@ -31,7 +33,29 @@ class MyApp extends StatelessWidget {
           foregroundColor: AppColors.textPrimary,
         ),
       ),
-      home:   LoginPage(),
+      home: AuthenticationWrapper(),
+    );
+  }
+}
+
+class AuthenticationWrapper extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<User?>(
+      stream: FirebaseAuth.instance.authStateChanges(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.active) {
+          User? user = snapshot.data;
+          if (user == null) {
+            return LoginPage();
+          } else {
+            return HomeScreen();
+          }
+        }
+
+        // Show a loading indicator while checking authentication state
+        return Scaffold(body: Center(child: CircularProgressIndicator()));
+      },
     );
   }
 }

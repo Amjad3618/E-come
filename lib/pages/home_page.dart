@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
+import '../models/product_model.dart';
 import '../utils/color.dart';
+import 'product_category_page.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -35,6 +38,9 @@ class _HomeScreenState extends State<HomeScreen> {
   ];
   
   late Timer _timer;
+  bool _isLoading = true;
+  List<Map<String, dynamic>> _categories = [];
+  List<Product> _products = []; // List to store products
 
   @override
   void initState() {
@@ -55,6 +61,54 @@ class _HomeScreenState extends State<HomeScreen> {
         );
       }
     });
+
+    // Fetch categories and products from Firestore
+    _fetchCategories();
+    _fetchProducts();
+  }
+
+  // Method to fetch categories from Firestore
+  Future<void> _fetchCategories() async {
+    try {
+      final QuerySnapshot snapshot = await FirebaseFirestore.instance
+          .collection('shop_categories')
+          .get();
+
+      setState(() {
+        _categories = snapshot.docs.map((doc) {
+          final data = doc.data() as Map<String, dynamic>;
+          return {
+            'id': doc.id,
+            'name': data['name'] ?? 'Unknown Category',
+            'imageUrl': data['image'] ?? '',
+            'desc': data['desc'] ?? '',
+          };
+        }).toList();
+        _isLoading = false;
+      });
+    } catch (e) {
+      print('Error fetching categories: $e');
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
+  // Method to fetch products from Firestore
+  Future<void> _fetchProducts() async {
+    try {
+      final QuerySnapshot snapshot = await FirebaseFirestore.instance
+          .collection('shop_products')
+          .get();
+
+      setState(() {
+        _products = snapshot.docs
+            .map((doc) => Product.fromFirestore(doc))
+            .toList();
+      });
+    } catch (e) {
+      print('Error fetching products: $e');
+    }
   }
 
   @override
@@ -185,34 +239,52 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
               
-              SizedBox(height: 8),
+              SizedBox(height: 20),
               
-              // Categories
-              Text(
-                'Categories',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
+              // Categories Section
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Categories',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                  TextButton(
+                    onPressed: () {
+                      // Navigate to all categories page
+                    },
+                    child: Text('See All'),
+                  ),
+                ],
               ),
               SizedBox(height: 10),
-              SizedBox(
-                height: 100,
-                child: ListView(
-                  scrollDirection: Axis.horizontal,
-                  children: [
-                    _buildCategoryItem(Icons.smartphone, 'Phones'),
-                    _buildCategoryItem(Icons.laptop, 'Laptops'),
-                    _buildCategoryItem(Icons.headphones, 'Audio'),
-                    _buildCategoryItem(Icons.watch, 'Watches'),
-                    _buildCategoryItem(Icons.tv, 'TV & Home'),
-                    _buildCategoryItem(Icons.camera_alt, 'Cameras'),
-                  ],
-                ),
-              ),
               
-              SizedBox(height: 10),
+              // Categories from Firestore
+              _isLoading
+                ? Center(child: CircularProgressIndicator())
+                : _categories.isEmpty
+                  ? Center(child: Text('No categories found', style: TextStyle(color: Colors.white)))
+                  : SizedBox(
+                      height: 120,
+                      child: ListView.builder(
+                        scrollDirection: Axis.horizontal,
+                        itemCount: _categories.length,
+                        itemBuilder: (context, index) {
+                          final category = _categories[index];
+                          return _buildCategoryItemFromFirestore(
+                            category['imageUrl'],
+                            category['name'],
+                            category['id'],
+                          );
+                        },
+                      ),
+                    ),
+              
+              SizedBox(height: 20),
               
               // Featured Products
               Row(
@@ -233,236 +305,253 @@ class _HomeScreenState extends State<HomeScreen> {
                 ],
               ),
               SizedBox(height: 16),
-              GridView.count(
-                shrinkWrap: true,
-                physics: NeverScrollableScrollPhysics(),
-                crossAxisCount: 2,
-                childAspectRatio: 0.7,
-                crossAxisSpacing: 16,
-                mainAxisSpacing: 16,
-                children: [
-                  _buildProductCard('Wireless Earbuds', '99.99', '4.8'),
-                  _buildProductCard('Smart Watch', '199.99', '4.7'),
-                  _buildProductCard('Bluetooth Speaker', '89.99', '4.5'),
-                  _buildProductCard('Phone Case', '24.99', '4.6'),
-                ],
-              ),
+              
+              // Display products from Firestore
+              _products.isEmpty
+                ? Center(
+                    child: _isLoading
+                      ? CircularProgressIndicator()
+                      : Text('No products found', style: TextStyle(color: Colors.white))
+                  )
+                : GridView.builder(
+                    shrinkWrap: true,
+                    physics: NeverScrollableScrollPhysics(),
+                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 2,
+                      childAspectRatio: 0.7,
+                      crossAxisSpacing: 16,
+                      mainAxisSpacing: 16,
+                    ),
+                    itemCount: _products.length,
+                    itemBuilder: (context, index) {
+                      final product = _products[index];
+                      return _buildProductCard(
+                        product: product,
+                        onPressed: () {
+                          // Navigate to product details page
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => ProductDetailScreen(product: product.toMap()),
+                            ),
+                          );
+                        },
+                      );
+                    },
+                  ),
               
               SizedBox(height: 24),
-              
-              // New Arrivals Section
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'New Arrivals',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                  ),
-                  TextButton(
-                    onPressed: () {},
-                    child: Text('See All'),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // Method to build category items from Firestore data
+  Widget _buildCategoryItemFromFirestore(String imageUrl, String label, String categoryId) {
+    return GestureDetector(
+      onTap: () {
+        // Navigate to category products page
+        _navigateToCategoryProducts(categoryId, label);
+      },
+      child: Container(
+        width: 100, // Made wider for better display
+        margin: EdgeInsets.only(right: 16),
+        child: Column(
+          children: [
+            // Category Image Container
+            Container(
+              height: 80, // Bigger image for better visibility
+              width: 80,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: AppColors.primaryDark.withOpacity(0.8),
+                border: Border.all(color: Colors.white.withOpacity(0.2), width: 2),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.2),
+                    spreadRadius: 1,
+                    blurRadius: 4,
+                    offset: Offset(0, 2),
                   ),
                 ],
               ),
-              SizedBox(height: 16),
-              SizedBox(
-                height: 220,
-                child: ListView(
-                  scrollDirection: Axis.horizontal,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(40),
+                child: imageUrl.isNotEmpty 
+                  ? Image.network(
+                      imageUrl,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        print("Error loading image: $error");
+                        return Icon(
+                          Icons.category,
+                          size: 40,
+                          color: Colors.white,
+                        );
+                      },
+                      loadingBuilder: (context, child, loadingProgress) {
+                        if (loadingProgress == null) return child;
+                        return Center(
+                          child: CircularProgressIndicator(
+                            value: loadingProgress.expectedTotalBytes != null
+                                ? loadingProgress.cumulativeBytesLoaded / 
+                                  (loadingProgress.expectedTotalBytes ?? 1)
+                                : null,
+                            strokeWidth: 2.0,
+                            color: Colors.white,
+                          ),
+                        );
+                      },
+                    )
+                  : Icon(
+                      Icons.category,
+                      size: 40,
+                      color: Colors.white,
+                    ),
+              ),
+            ),
+            SizedBox(height: 8),
+            // Category Name
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                color: Colors.white,
+              ),
+              textAlign: TextAlign.center,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // Navigation method for category products
+  void _navigateToCategoryProducts(String categoryId, String categoryName) {
+    print('Navigating to products in category: $categoryName (ID: $categoryId)');
+    
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => CategoryProductsScreen(
+          categoryId: categoryId,
+          categoryName: categoryName,
+        ),
+      ),
+    );
+  }
+
+  // Updated method to build product card
+  Widget _buildProductCard({required Product product, required VoidCallback onPressed}) {
+    return GestureDetector(
+      onTap: onPressed,
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.grey.shade200),
+          color: AppColors.primaryDark,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              flex: 3,
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade100,
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
+                ),
+                width: double.infinity,
+                child: product.images.isNotEmpty
+                  ? ClipRRect(
+                      borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
+                      child: Image.network(
+                        product.images[0],
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Center(
+                            child: Icon(
+                              Icons.image,
+                              size: 60,
+                              color: Colors.grey.shade400,
+                            ),
+                          );
+                        },
+                        loadingBuilder: (context, child, loadingProgress) {
+                          if (loadingProgress == null) return child;
+                          return Center(
+                            child: CircularProgressIndicator(
+                              value: loadingProgress.expectedTotalBytes != null
+                                  ? loadingProgress.cumulativeBytesLoaded / 
+                                    (loadingProgress.expectedTotalBytes ?? 1)
+                                  : null,
+                            ),
+                          );
+                        },
+                      ),
+                    )
+                  : Center(
+                      child: Icon(
+                        Icons.image,
+                        size: 60,
+                        color: Colors.grey.shade400,
+                      ),
+                    ),
+              ),
+            ),
+            Expanded(
+              flex: 2,
+              child: Padding(
+                padding: const EdgeInsets.all(12.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    _buildHorizontalProductCard('Premium Headphones', '249.99'),
-                    _buildHorizontalProductCard('Tablet Pro', '399.99'),
-                    _buildHorizontalProductCard('Power Bank', '59.99'),
-                    _buildHorizontalProductCard('Wireless Mouse', '39.99'),
+                    Text(
+                      product.name,
+                      style: TextStyle(
+                        fontWeight: FontWeight.w500,
+                        fontSize: 16,
+                        color: Colors.white,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    Row(
+                      children: [
+                        Text(
+                          '₹${product.newPrice}',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 18,
+                            color: Colors.white,
+                          ),
+                        ),
+                        SizedBox(width: 8),
+                        if (product.oldPrice > product.newPrice)
+                          Text(
+                            '₹${product.oldPrice}',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w400,
+                              fontSize: 14,
+                              color: Colors.grey,
+                              decoration: TextDecoration.lineThrough,
+                            ),
+                          ),
+                      ],
+                    ),
                   ],
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
   }
-
-  Widget _buildCategoryItem(IconData icon, String label) {
-    return Container(
-      width: 80,
-      margin: EdgeInsets.only(right: 16),
-      child: Column(
-        children: [
-          CircleAvatar(
-            radius: 30,
-            backgroundColor: AppColors.primaryDark,
-            child: Icon(
-              icon,
-              size: 28,
-              color: Colors.white,
-            ),
-          ),
-          SizedBox(height: 8),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.white,
-            ),
-            textAlign: TextAlign.center,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildProductCard(String name, String price, String rating) {
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade200),
-        color: AppColors.primaryDark,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(
-            flex: 3,
-            child: Container(
-              decoration: BoxDecoration(
-                color: Colors.grey.shade100,
-                borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
-              ),
-              width: double.infinity,
-              child: Center(
-                child: Icon(
-                  Icons.image,
-                  size: 60,
-                  color: Colors.grey.shade400,
-                ),
-              ),
-            ),
-          ),
-          Expanded(
-            flex: 2,
-            child: Padding(
-              padding: const EdgeInsets.all(12.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    name,
-                    style: TextStyle(
-                      fontWeight: FontWeight.w500,
-                      fontSize: 16,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  Row(
-                    children: [
-                      Icon(Icons.star, size: 16, color: Colors.amber),
-                      SizedBox(width: 4),
-                      Text(
-                        rating,
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ],
-                  ),
-                  Text(
-                    '\$$price',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 18,
-                      color: Colors.white,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-Widget _buildHorizontalProductCard(String name, String price) {
-  return Container(
-    width: 160,
-    // Remove the fixed height that's causing the overflow
-    margin: EdgeInsets.only(right: 16),
-    decoration: BoxDecoration(
-      borderRadius: BorderRadius.circular(12),
-      border: Border.all(color: Colors.grey.shade200),
-      color: AppColors.primaryDark,
-    ),
-    child: Column(
-      mainAxisSize: MainAxisSize.min, // Add this to make the column take minimum required space
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Container(
-          height: 100,
-          decoration: BoxDecoration(
-            color: Colors.grey.shade100,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
-          ),
-          width: double.infinity,
-          child: Center(
-            child: Icon(
-              Icons.image,
-              size: 50,
-              color: Colors.grey.shade400,
-            ),
-          ),
-        ),
-        Padding(
-          padding: const EdgeInsets.all(10.0), // Reduced padding slightly
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                name,
-                style: TextStyle(
-                  fontWeight: FontWeight.w500,
-                  fontSize: 16,
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-              SizedBox(height: 6), // Reduced spacing slightly
-              Text(
-                '\$$price',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 18,
-                  color: Colors.white,
-                ),
-              ),
-              SizedBox(height: 6), // Reduced spacing slightly
-              Container(
-                padding: EdgeInsets.symmetric(horizontal: 8, vertical: 3), // Reduced vertical padding
-                decoration: BoxDecoration(
-                  color: Colors.green.shade50,
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                child: Text(
-                  'New',
-                  style: TextStyle(
-                    color: Colors.green.shade700,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
-    ),
-  );
-}
 }
