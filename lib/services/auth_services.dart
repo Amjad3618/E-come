@@ -1,3 +1,4 @@
+import 'package:e_com_1/pages/login_page.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -5,7 +6,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/user_model.dart';
 
 class AuthServices extends GetxController {
-  static AuthServices instance = Get.find();
   
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -175,6 +175,7 @@ Future<void> signUp({
   Future<void> signOut() async {
     try {
       await _auth.signOut();
+      Get.offAll(LoginPage());
     } catch (e) {
       Get.snackbar(
         'Error',
