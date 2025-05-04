@@ -2,9 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/product_model.dart';
 import '../utils/color.dart';
-
-// Product Model to use across screens
-
+import 'products_detail.dart';
 
 class CategoryProductsScreen extends StatefulWidget {
   final String categoryId;
@@ -22,6 +20,7 @@ class CategoryProductsScreen extends StatefulWidget {
 
 class _CategoryProductsScreenState extends State<CategoryProductsScreen> {
   bool _isLoading = true;
+  String? _error;
   List<Product> _products = [];
 
   @override
@@ -35,29 +34,45 @@ class _CategoryProductsScreenState extends State<CategoryProductsScreen> {
     try {
       setState(() {
         _isLoading = true;
+        _error = null;
       });
 
-      // Get the category ID in lowercase for case-insensitive comparison
-      final String categoryId = widget.categoryId.toLowerCase();
-      
-      print('Fetching products for category: $categoryId');
+      print('Fetching products for category ID: ${widget.categoryId}');
+      print('Category Name: ${widget.categoryName}');
 
-      // Query the shop_products collection where category field matches the categoryId
+      // Query products collection with properly structured query
       final QuerySnapshot snapshot = await FirebaseFirestore.instance
           .collection('shop_products')
-          .where('category', isEqualTo: categoryId)
+          .where('category_id', isEqualTo: widget.categoryId)
           .get();
 
-      print('Found ${snapshot.docs.length} products in category $categoryId');
+      print('Found ${snapshot.docs.length} products in category ${widget.categoryId}');
 
-      setState(() {
-        _products = snapshot.docs.map((doc) => Product.fromFirestore(doc)).toList();
-        _isLoading = false;
-      });
+      // If no products found with category_id, try with category field as a fallback
+      if (snapshot.docs.isEmpty) {
+        print('Trying alternate query with category field');
+        final fallbackSnapshot = await FirebaseFirestore.instance
+            .collection('shop_products')
+            .where('category', isEqualTo: widget.categoryId)
+            .get();
+            
+        print('Fallback query found ${fallbackSnapshot.docs.length} products');
+        
+        setState(() {
+          _products = fallbackSnapshot.docs.map((doc) => Product.fromFirestore(doc)).toList();
+          _isLoading = false;
+        });
+      } else {
+        setState(() {
+          _products = snapshot.docs.map((doc) => Product.fromFirestore(doc)).toList();
+          _isLoading = false;
+        });
+      }
     } catch (e) {
       print('Error fetching products: $e');
       setState(() {
         _isLoading = false;
+        _error = e.toString();
       });
     }
   }
@@ -70,12 +85,12 @@ class _CategoryProductsScreenState extends State<CategoryProductsScreen> {
         backgroundColor: AppColors.primaryDark,
         title: Text(
           widget.categoryName,
-          style: TextStyle(
+          style: const TextStyle(
             color: Colors.white,
             fontWeight: FontWeight.bold,
           ),
         ),
-        iconTheme: IconThemeData(color: Colors.white),
+        iconTheme: const IconThemeData(color: Colors.white),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -84,43 +99,87 @@ class _CategoryProductsScreenState extends State<CategoryProductsScreen> {
           children: [
             Text(
               '${widget.categoryName} Products',
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 22,
                 fontWeight: FontWeight.bold,
                 color: Colors.white,
               ),
             ),
-            SizedBox(height: 16),
-            _isLoading
-                ? Expanded(
-                    child: Center(
-                      child: CircularProgressIndicator(),
-                    ),
-                  )
-                : _products.isEmpty
-                    ? Expanded(
-                        child: Center(
-                          child: Text(
-                            'No products found in this category',
-                            style: TextStyle(color: Colors.white, fontSize: 16),
-                          ),
-                        ),
-                      )
-                    : Expanded(
-                        child: GridView.builder(
-                          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 2,
-                            childAspectRatio: 0.7,
-                            crossAxisSpacing: 16,
-                            mainAxisSpacing: 16,
-                          ),
-                          itemCount: _products.length,
-                          itemBuilder: (context, index) {
-                            final product = _products[index];
-                            return _buildProductCard(product);
-                          },
+            const SizedBox(height: 16),
+            if (_isLoading)
+              const Expanded(
+                child: Center(
+                  child: CircularProgressIndicator(),
+                ),
+              )
+            else if (_error != null)
+              Expanded(
+                child: Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(
+                        Icons.error_outline,
+                        color: Colors.red,
+                        size: 60,
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        'Error loading products',
+                        style: const TextStyle(color: Colors.white, fontSize: 18),
+                      ),
+                      const SizedBox(height: 8),
+                      ElevatedButton(
+                        onPressed: _fetchCategoryProducts,
+                        child: const Text('Retry'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primary,
+                          foregroundColor: Colors.white,
                         ),
                       ),
+                    ],
+                  ),
+                ),
+              )
+            else if (_products.isEmpty)
+              const Expanded(
+                child: Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.category_outlined,
+                        color: Colors.grey,
+                        size: 60,
+                      ),
+                      SizedBox(height: 16),
+                      Text(
+                        'No products found in this category',
+                        style: TextStyle(color: Colors.white, fontSize: 16),
+                      ),
+                    ],
+                  ),
+                ),
+              )
+            else
+              Expanded(
+                child: RefreshIndicator(
+                  onRefresh: _fetchCategoryProducts,
+                  child: GridView.builder(
+                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 2,
+                      childAspectRatio: 0.7,
+                      crossAxisSpacing: 16,
+                      mainAxisSpacing: 16,
+                    ),
+                    itemCount: _products.length,
+                    itemBuilder: (context, index) {
+                      final product = _products[index];
+                      return _buildProductCard(product);
+                    },
+                  ),
+                ),
+              ),
           ],
         ),
       ),
@@ -150,12 +209,12 @@ class _CategoryProductsScreenState extends State<CategoryProductsScreen> {
               child: Container(
                 decoration: BoxDecoration(
                   color: Colors.grey.shade100,
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
                 ),
                 width: double.infinity,
                 child: imageUrl.isNotEmpty
                     ? ClipRRect(
-                        borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
+                        borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
                         child: Image.network(
                           imageUrl,
                           fit: BoxFit.cover,
@@ -181,12 +240,10 @@ class _CategoryProductsScreenState extends State<CategoryProductsScreen> {
                           },
                         ),
                       )
-                    : Center(
-                        child: Icon(
-                          Icons.image,
-                          size: 60,
-                          color: Colors.grey.shade400,
-                        ),
+                    : Icon(
+                        Icons.image,
+                        size: 60,
+                        color: Colors.grey.shade400,
                       ),
               ),
             ),
@@ -201,7 +258,7 @@ class _CategoryProductsScreenState extends State<CategoryProductsScreen> {
                   children: [
                     Text(
                       product.name,
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontWeight: FontWeight.w500,
                         fontSize: 16,
                         color: Colors.white,
@@ -213,7 +270,7 @@ class _CategoryProductsScreenState extends State<CategoryProductsScreen> {
                       children: [
                         Text(
                           'In Stock: ${product.quantity}',
-                          style: TextStyle(
+                          style: const TextStyle(
                             fontSize: 12,
                             color: Colors.white70,
                           ),
@@ -224,17 +281,17 @@ class _CategoryProductsScreenState extends State<CategoryProductsScreen> {
                       children: [
                         Text(
                           '₹${product.newPrice}',
-                          style: TextStyle(
+                          style: const TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 18,
                             color: Colors.white,
                           ),
                         ),
-                        SizedBox(width: 8),
+                        const SizedBox(width: 8),
                         if (product.oldPrice > product.newPrice)
                           Text(
                             '₹${product.oldPrice}',
-                            style: TextStyle(
+                            style: const TextStyle(
                               fontSize: 14,
                               color: Colors.white60,
                               decoration: TextDecoration.lineThrough,
@@ -258,276 +315,7 @@ class _CategoryProductsScreenState extends State<CategoryProductsScreen> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => ProductDetailScreen(product: product.toMap()),
-      ),
-    );
-  }
-}
-
-// ProductDetailScreen to show detailed information about a product
-class ProductDetailScreen extends StatefulWidget {
-  final Map<String, dynamic> product;
-
-  const ProductDetailScreen({
-    Key? key,
-    required this.product,
-  }) : super(key: key);
-
-  @override
-  State<ProductDetailScreen> createState() => _ProductDetailScreenState();
-}
-
-class _ProductDetailScreenState extends State<ProductDetailScreen> {
-  int _selectedImageIndex = 0;
-  final PageController _imageController = PageController();
-
-  @override
-  Widget build(BuildContext context) {
-    List<dynamic> images = widget.product['images'] ?? [];
-    
-    return Scaffold(
-      appBar: AppBar(
-        elevation: 0,
-        backgroundColor: AppColors.primaryDark,
-        title: Text(
-          'Product Details',
-          style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        iconTheme: IconThemeData(color: Colors.white),
-        actions: [
-          IconButton(
-            icon: Icon(Icons.share, color: Colors.white),
-            onPressed: () {},
-          ),
-          IconButton(
-            icon: Icon(Icons.favorite_border, color: Colors.white),
-            onPressed: () {},
-          ),
-        ],
-      ),
-      body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Image Carousel
-            SizedBox(
-              height: 300,
-              child: Stack(
-                children: [
-                  PageView.builder(
-                    controller: _imageController,
-                    onPageChanged: (index) {
-                      setState(() {
-                        _selectedImageIndex = index;
-                      });
-                    },
-                    itemCount: images.isEmpty ? 1 : images.length,
-                    itemBuilder: (context, index) {
-                      return Container(
-                        color: Colors.grey.shade200,
-                        child: images.isEmpty
-                            ? Center(
-                                child: Icon(
-                                  Icons.image_not_supported,
-                                  size: 80,
-                                  color: Colors.grey.shade400,
-                                ),
-                              )
-                            : Image.network(
-                                images[index].toString(),
-                                fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) {
-                                  return Center(
-                                    child: Icon(
-                                      Icons.error_outline,
-                                      size: 60,
-                                      color: Colors.grey.shade400,
-                                    ),
-                                  );
-                                },
-                              ),
-                      );
-                    },
-                  ),
-                  // Image indicators
-                  if (images.length > 1)
-                    Positioned(
-                      bottom: 16,
-                      left: 0,
-                      right: 0,
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: List.generate(
-                          images.length,
-                          (index) => Container(
-                            width: 8,
-                            height: 8,
-                            margin: EdgeInsets.symmetric(horizontal: 4),
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: _selectedImageIndex == index
-                                  ? AppColors.primaryDark
-                                  : Colors.black.withOpacity(0.5),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                ],
-              ),
-            ),
-            
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Product Name
-                  Text(
-                    widget.product['name'],
-                    style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                  ),
-                  SizedBox(height: 12),
-                  
-                  // Price Info
-                  Row(
-                    children: [
-                      Text(
-                        '₹${widget.product['new_price']}',
-                        style: TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                      ),
-                      SizedBox(width: 12),
-                      if (widget.product['old_price'] != null && 
-                          widget.product['old_price'] > widget.product['new_price'])
-                        Text(
-                          '₹${widget.product['old_price']}',
-                          style: TextStyle(
-                            fontSize: 18,
-                            color: Colors.white60,
-                            decoration: TextDecoration.lineThrough,
-                          ),
-                        ),
-                    ],
-                  ),
-                  SizedBox(height: 16),
-                  
-                  // Description
-                  Text(
-                    'Description',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                  ),
-                  SizedBox(height: 8),
-                  Text(
-                    widget.product['desc'] ?? 'No description available.',
-                    style: TextStyle(
-                      fontSize: 16,
-                      height: 1.5,
-                      color: Colors.white.withOpacity(0.9),
-                    ),
-                  ),
-                  SizedBox(height: 16),
-                  
-                  // Availability
-                  Container(
-                    padding: EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-                    decoration: BoxDecoration(
-                      color: widget.product['quantity'] > 0 
-                          ? Colors.green.withOpacity(0.2) 
-                          : Colors.red.withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      widget.product['quantity'] > 0 
-                          ? 'In Stock: ${widget.product['quantity']} available' 
-                          : 'Out of Stock',
-                      style: TextStyle(
-                        color: widget.product['quantity'] > 0 ? Colors.green : Colors.red,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ),
-                  SizedBox(height: 24),
-                  
-                  // Add to Cart Button
-                  ElevatedButton(
-                    onPressed: widget.product['quantity'] > 0 ? () {
-                      // Add to cart functionality
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text('Added to cart!'),
-                          duration: Duration(seconds: 2),
-                        ),
-                      );
-                    } : null,
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.shopping_cart),
-                        SizedBox(width: 8),
-                        Text('Add to Cart'),
-                      ],
-                    ),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primaryDark,
-                      foregroundColor: Colors.white,
-                      padding: EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      minimumSize: Size(double.infinity, 50),
-                    ),
-                  ),
-                  SizedBox(height: 16),
-                  
-                  // Buy Now Button
-                  ElevatedButton(
-                    onPressed: widget.product['quantity'] > 0 ? () {
-                      // Buy now functionality
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text('Proceeding to checkout...'),
-                          duration: Duration(seconds: 2),
-                        ),
-                      );
-                    } : null,
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.flash_on),
-                        SizedBox(width: 8),
-                        Text('Buy Now'),
-                      ],
-                    ),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.orange,
-                      foregroundColor: Colors.white,
-                      padding: EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      minimumSize: Size(double.infinity, 50),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
+        builder: (context) => ProductDetailScreen(product: product),
       ),
     );
   }
