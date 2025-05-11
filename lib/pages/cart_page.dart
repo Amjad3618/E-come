@@ -1,9 +1,7 @@
-import 'package:e_com_1/bottom_nav/bottom_nav.dart';
-import 'package:e_com_1/pages/home_page.dart';
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
-import 'package:get/get_core/src/get_main.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../utils/color.dart';
+import '../models/cart_model.dart';
 
 class CartPage extends StatefulWidget {
   const CartPage({Key? key}) : super(key: key);
@@ -13,64 +11,160 @@ class CartPage extends StatefulWidget {
 }
 
 class _CartPageState extends State<CartPage> {
-  // Sample cart items data
-  final List<Map<String, dynamic>> _cartItems = [
-    {
-      'name': 'Wireless Earbuds',
-      'price': 99.99,
-      'quantity': 1,
-      'image': Icons.headphones,
-    },
-    {
-      'name': 'Smart Watch',
-      'price': 199.99,
-      'quantity': 1,
-      'image': Icons.watch,
-    },
-    {
-      'name': 'Bluetooth Speaker',
-      'price': 89.99,
-      'quantity': 2,
-      'image': Icons.speaker,
-    },
-  ];
+  bool _isLoading = true;
+  List<CartItem> _cartItems = [];
+  Map<String, double> _cartTotals = {
+    'subtotal': 0.0,
+    'shipping': 0.0,
+    'tax': 0.0,
+    'total': 0.0,
+  };
+  
+  // Get current user ID - IMPORTANT: Make sure this matches the logged-in user ID
+  String get _userId => FirebaseAuth.instance.currentUser?.uid ?? 'guest';
+  
+  // Initialize cart service
+  late final CartService _cartService = CartService(userId: _userId);
 
-  double get _subtotal => _cartItems.fold(
-      0, (sum, item) => sum + (item['price'] * item['quantity']));
-
-  double get _shipping => 8.99;
-  double get _tax => _subtotal * 0.08;
-  double get _total => _subtotal + _shipping + _tax;
-
-  void _updateQuantity(int index, int newQuantity) {
-    if (newQuantity < 1) return;
-    setState(() {
-      _cartItems[index]['quantity'] = newQuantity;
-    });
+  @override
+  void initState() {
+    super.initState();
+    _loadCartItems();
   }
 
-  void _removeItem(int index) {
+  // Load cart items from Firestore
+  Future<void> _loadCartItems() async {
     setState(() {
-      _cartItems.removeAt(index);
+      _isLoading = true;
     });
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Item removed from cart'),
-        backgroundColor: AppColors.primaryDark,
-        duration: Duration(seconds: 2),
-      ),
-    );
+    
+    try {
+      // Get cart items
+      final items = await _cartService.getCartItems();
+      
+      // Calculate totals
+      final totals = await _cartService.calculateCartTotals();
+      
+      setState(() {
+        _cartItems = items;
+        _cartTotals = totals;
+        _isLoading = false;
+      });
+      
+      // Debug: Print loaded items
+      print('Loaded ${items.length} cart items for user: $_userId');
+      for (var item in items) {
+        print('Cart item: ${item.name}, price: ${item.price}, quantity: ${item.quantity}');
+      }
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+      });
+      
+      // Show error message with more details for debugging
+      print('Error loading cart: ${e.toString()}');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to load cart: ${e.toString()}'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  // Update item quantity
+  Future<void> _updateQuantity(CartItem item, int newQuantity) async {
+    if (newQuantity < 1) return;
+    
+    try {
+      // Update in Firestore
+      await _cartService.updateQuantity(item.id, newQuantity);
+      
+      // Reload cart
+      _loadCartItems();
+    } catch (e) {
+      // Show error message
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to update quantity: ${e.toString()}'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  // Remove item from cart
+  Future<void> _removeItem(CartItem item) async {
+    try {
+      // Remove from Firestore
+      await _cartService.removeItem(item.id);
+      
+      // Show success message
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Item removed from cart'),
+          backgroundColor: AppColors.primaryDark,
+          duration: Duration(seconds: 2),
+        ),
+      );
+      
+      // Reload cart
+      _loadCartItems();
+    } catch (e) {
+      // Show error message
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to remove item: ${e.toString()}'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  // Clear entire cart
+  Future<void> _clearCart() async {
+    try {
+      // Clear in Firestore
+      await _cartService.clearCart();
+      
+      // Reload cart
+      _loadCartItems();
+      
+      // Show success message
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Cart cleared successfully'),
+          backgroundColor: AppColors.primaryDark,
+          duration: Duration(seconds: 2),
+        ),
+      );
+    } catch (e) {
+      // Show error message
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to clear cart: ${e.toString()}'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  // Navigate to checkout
+  void _proceedToCheckout() {
+    // Navigate to checkout page
+    
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColors.scaffold,
       appBar: AppBar(
-        automaticallyImplyLeading: false,
+        automaticallyImplyLeading: true,
         elevation: 0,
         backgroundColor: AppColors.primaryDark,
         title: Text(
-          'E---->COM---->cart',
+          'Your Cart',
           style: TextStyle(
             color: Colors.white,
             fontWeight: FontWeight.bold,
@@ -79,15 +173,17 @@ class _CartPageState extends State<CartPage> {
         actions: [
           IconButton(
             icon: Icon(Icons.delete_outline, color: Colors.white),
-            onPressed: _cartItems.isEmpty
+            onPressed: _isLoading || _cartItems.isEmpty
                 ? null
                 : () {
                     // Show confirmation dialog
                     showDialog(
                       context: context,
                       builder: (context) => AlertDialog(
-                        title: Text('Clear Cart?'),
-                        content: Text('Are you sure you want to remove all items?'),
+                        backgroundColor: Colors.grey.shade800,
+                        title: Text('Clear Cart?', style: TextStyle(color: Colors.white)),
+                        content: Text('Are you sure you want to remove all items?', 
+                            style: TextStyle(color: Colors.white)),
                         actions: [
                           TextButton(
                             onPressed: () => Navigator.pop(context),
@@ -95,10 +191,8 @@ class _CartPageState extends State<CartPage> {
                           ),
                           TextButton(
                             onPressed: () {
-                              setState(() {
-                                _cartItems.clear();
-                              });
                               Navigator.pop(context);
+                              _clearCart();
                             },
                             child: Text('Clear'),
                             style: TextButton.styleFrom(
@@ -112,29 +206,31 @@ class _CartPageState extends State<CartPage> {
           ),
         ],
       ),
-      body: _cartItems.isEmpty
-          ? _buildEmptyCart()
-          : Column(
-              children: [
-                Expanded(
-                  child: ListView.builder(
-                    padding: const EdgeInsets.all(16.0),
-                    itemCount: _cartItems.length,
-                    itemBuilder: (context, index) {
-                      final item = _cartItems[index];
-                      return _buildCartItem(item, index);
-                    },
-                  ),
+      body: _isLoading 
+          ? _buildLoadingView()
+          : _cartItems.isEmpty
+              ? _buildEmptyCart()
+              : Column(
+                  children: [
+                    Expanded(
+                      child: ListView.builder(
+                        padding: const EdgeInsets.all(16.0),
+                        itemCount: _cartItems.length,
+                        itemBuilder: (context, index) {
+                          final item = _cartItems[index];
+                          return _buildCartItem(item);
+                        },
+                      ),
+                    ),
+                    _buildOrderSummary(),
+                  ],
                 ),
-                _buildOrderSummary(),
-              ],
-            ),
-      bottomNavigationBar: _cartItems.isEmpty
+      bottomNavigationBar: _isLoading || _cartItems.isEmpty
           ? null
           : Container(
               padding: EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: AppColors.primaryDark,
                 borderRadius: BorderRadius.vertical(
                   top: Radius.circular(20),
                 ),
@@ -148,11 +244,9 @@ class _CartPageState extends State<CartPage> {
               ),
               child: SafeArea(
                 child: ElevatedButton(
-                  onPressed: () {
-                    // Navigate to checkout
-                  },
+                  onPressed: _proceedToCheckout,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primaryDark,
+                    backgroundColor: AppColors.primary,
                     foregroundColor: Colors.white,
                     padding: EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
@@ -172,6 +266,27 @@ class _CartPageState extends State<CartPage> {
     );
   }
 
+  Widget _buildLoadingView() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          CircularProgressIndicator(
+            color: AppColors.primaryDark,
+          ),
+          SizedBox(height: 16),
+          Text(
+            'Loading your cart...',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 16,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildEmptyCart() {
     return Center(
       child: Column(
@@ -188,7 +303,7 @@ class _CartPageState extends State<CartPage> {
             style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.bold,
-              color: Colors.grey.shade700,
+              color: Colors.white,
             ),
           ),
           SizedBox(height: 8),
@@ -196,65 +311,81 @@ class _CartPageState extends State<CartPage> {
             'Browse our products and start shopping',
             style: TextStyle(
               fontSize: 16,
-              color: Colors.grey.shade600,
+              color: Colors.white.withOpacity(0.8),
             ),
           ),
           SizedBox(height: 24),
-          ElevatedButton(
-            onPressed: () {
-              // Navigate back to home or products screen
-             
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primaryDark,
-              foregroundColor: Colors.white,
-              padding: EdgeInsets.symmetric(horizontal: 32, vertical: 12),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-            child: Text(
-              'Explore Products',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
+          
         ],
       ),
     );
   }
 
-  Widget _buildCartItem(Map<String, dynamic> item, int index) {
+  Widget _buildCartItem(CartItem item) {
     return Container(
       margin: EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade200),
-        color: Colors.white,
+        border: Border.all(color: Colors.grey.shade700),
+        color: Colors.grey.shade800,
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Product Image
           Container(
             width: 100,
             height: 100,
             decoration: BoxDecoration(
-              color: Colors.grey.shade100,
+              color: Colors.grey.shade700,
               borderRadius: BorderRadius.only(
                 topLeft: Radius.circular(12),
                 bottomLeft: Radius.circular(12),
               ),
             ),
-            child: Center(
-              child: Icon(
-                item['image'],
-                size: 40,
-                color: AppColors.primaryDark,
-              ),
-            ),
+            child: item.imageUrl.isNotEmpty
+                ? ClipRRect(
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(12),
+                      bottomLeft: Radius.circular(12),
+                    ),
+                    child: Image.network(
+                      item.imageUrl,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        // Print the error for debugging
+                        print('Error loading image: $error');
+                        return Center(
+                          child: Icon(
+                            Icons.image_not_supported,
+                            size: 40,
+                            color: Colors.grey.shade500,
+                          ),
+                        );
+                      },
+                      loadingBuilder: (context, child, loadingProgress) {
+                        if (loadingProgress == null) return child;
+                        return Center(
+                          child: CircularProgressIndicator(
+                            value: loadingProgress.expectedTotalBytes != null
+                                ? loadingProgress.cumulativeBytesLoaded / 
+                                  (loadingProgress.expectedTotalBytes ?? 1)
+                                : null,
+                            color: AppColors.primary,
+                          ),
+                        );
+                      },
+                    ),
+                  )
+                : Center(
+                    child: Icon(
+                      Icons.image,
+                      size: 40,
+                      color: Colors.grey.shade500,
+                    ),
+                  ),
           ),
+          // Product Details
           Expanded(
             child: Padding(
               padding: const EdgeInsets.all(12.0),
@@ -266,18 +397,19 @@ class _CartPageState extends State<CartPage> {
                     children: [
                       Expanded(
                         child: Text(
-                          item['name'],
+                          item.name,
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 16,
+                            color: Colors.white,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
                       IconButton(
-                        icon: Icon(Icons.close, size: 16),
-                        onPressed: () => _removeItem(index),
+                        icon: Icon(Icons.close, size: 16, color: Colors.white),
+                        onPressed: () => _removeItem(item),
                         padding: EdgeInsets.zero,
                         constraints: BoxConstraints(),
                       ),
@@ -285,11 +417,11 @@ class _CartPageState extends State<CartPage> {
                   ),
                   SizedBox(height: 4),
                   Text(
-                    '\$${item['price'].toStringAsFixed(2)}',
+                    'Rs${item.price.toStringAsFixed(2)}',
                     style: TextStyle(
                       fontWeight: FontWeight.w500,
                       fontSize: 16,
-                      color: AppColors.primaryDark,
+                      color: AppColors.primary,
                     ),
                   ),
                   SizedBox(height: 12),
@@ -297,40 +429,40 @@ class _CartPageState extends State<CartPage> {
                     children: [
                       Container(
                         decoration: BoxDecoration(
-                          border: Border.all(color: Colors.grey.shade300),
+                          border: Border.all(color: Colors.grey.shade600),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Row(
                           children: [
                             _buildQuantityButton(
                               icon: Icons.remove,
-                              onPressed: () =>
-                                  _updateQuantity(index, item['quantity'] - 1),
+                              onPressed: () => _updateQuantity(item, item.quantity - 1),
                             ),
                             Container(
                               width: 40,
                               alignment: Alignment.center,
                               child: Text(
-                                '${item['quantity']}',
+                                '${item.quantity}',
                                 style: TextStyle(
                                   fontWeight: FontWeight.bold,
+                                  color: Colors.white,
                                 ),
                               ),
                             ),
                             _buildQuantityButton(
                               icon: Icons.add,
-                              onPressed: () =>
-                                  _updateQuantity(index, item['quantity'] + 1),
+                              onPressed: () => _updateQuantity(item, item.quantity + 1),
                             ),
                           ],
                         ),
                       ),
                       Spacer(),
                       Text(
-                        '\$${(item['price'] * item['quantity']).toStringAsFixed(2)}',
+                        'Rs${(item.price * item.quantity).toStringAsFixed(2)}',
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 16,
+                          color: Colors.white,
                         ),
                       ),
                     ],
@@ -357,6 +489,7 @@ class _CartPageState extends State<CartPage> {
         child: Icon(
           icon,
           size: 16,
+          color: Colors.white,
         ),
       ),
     );
@@ -366,13 +499,13 @@ class _CartPageState extends State<CartPage> {
     return Container(
       padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.grey.shade50,
+        color: Colors.grey.shade900,
         borderRadius: BorderRadius.vertical(
           top: Radius.circular(20),
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withOpacity(0.2),
             blurRadius: 10,
             offset: Offset(0, -5),
           ),
@@ -386,16 +519,17 @@ class _CartPageState extends State<CartPage> {
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
+              color: Colors.white,
             ),
           ),
           SizedBox(height: 16),
-          _buildSummaryRow('Subtotal', '\$${_subtotal.toStringAsFixed(2)}'),
-          _buildSummaryRow('Shipping', '\$${_shipping.toStringAsFixed(2)}'),
-          _buildSummaryRow('Tax (8%)', '\$${_tax.toStringAsFixed(2)}'),
-          Divider(height: 24),
+          _buildSummaryRow('Subtotal', 'Rs${_cartTotals['subtotal']?.toStringAsFixed(2)}'),
+          _buildSummaryRow('Shipping', 'Rs${_cartTotals['shipping']?.toStringAsFixed(2)}'),
+          _buildSummaryRow('Tax (8%)', 'Rs${_cartTotals['tax']?.toStringAsFixed(2)}'),
+          Divider(height: 24, color: Colors.grey.shade700),
           _buildSummaryRow(
             'Total',
-            '\$${_total.toStringAsFixed(2)}',
+            'Rs${_cartTotals['total']?.toStringAsFixed(2)}',
             isBold: true,
           ),
           SizedBox(height: 8),
@@ -408,7 +542,7 @@ class _CartPageState extends State<CartPage> {
               ),
               SizedBox(width: 8),
               Text(
-                'Free shipping on orders over \$50',
+                'Free shipping on orders over Rs50',
                 style: TextStyle(
                   color: Colors.green,
                   fontSize: 12,
@@ -430,7 +564,7 @@ class _CartPageState extends State<CartPage> {
           Text(
             label,
             style: TextStyle(
-              color: isBold ? Colors.black : Colors.grey.shade700,
+              color: isBold ? Colors.white : Colors.grey.shade400,
               fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
               fontSize: isBold ? 18 : 14,
             ),
@@ -438,7 +572,7 @@ class _CartPageState extends State<CartPage> {
           Text(
             value,
             style: TextStyle(
-              color: isBold ? AppColors.primaryDark : Colors.black,
+              color: isBold ? AppColors.primary : Colors.white,
               fontWeight: isBold ? FontWeight.bold : FontWeight.w500,
               fontSize: isBold ? 18 : 14,
             ),

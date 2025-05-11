@@ -1,15 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:carousel_slider/carousel_slider.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:get/get.dart';
+import 'package:get/get_core/src/get_main.dart';
 import '../models/product_model.dart';
+import '../models/cart_model.dart';
 import '../utils/color.dart';
+import 'cart_page.dart';
 
 class ProductDetailScreen extends StatefulWidget {
   final Product product;
 
-  const ProductDetailScreen({
-    Key? key,
-    required this.product,
-  }) : super(key: key);
+  const ProductDetailScreen({Key? key, required this.product})
+    : super(key: key);
 
   @override
   State<ProductDetailScreen> createState() => _ProductDetailScreenState();
@@ -18,6 +21,13 @@ class ProductDetailScreen extends StatefulWidget {
 class _ProductDetailScreenState extends State<ProductDetailScreen> {
   int _currentImageIndex = 0;
   int _quantity = 1;
+  bool _isAddingToCart = false;
+
+  // Get current user ID
+  String get _userId => FirebaseAuth.instance.currentUser?.uid ?? 'guest';
+
+  // Initialize cart service
+  late final CartService _cartService = CartService(userId: _userId);
 
   @override
   Widget build(BuildContext context) {
@@ -27,12 +37,16 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
         backgroundColor: AppColors.primaryDark,
         title: Text(
           'Product Detail',
-          style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-          ),
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
         actions: [
+          IconButton(
+            icon: Icon(Icons.shopping_cart, color: Colors.white),
+            onPressed: () {
+              // Navigate to cart page
+              Navigator.pushNamed(context, '/cart');
+            },
+          ),
           IconButton(
             icon: Icon(Icons.share, color: Colors.white),
             onPressed: () {
@@ -47,7 +61,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
           children: [
             // Product Image Carousel
             _buildImageCarousel(),
-            
+
             // Product Details
             Padding(
               padding: const EdgeInsets.all(16.0),
@@ -63,20 +77,17 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                       color: Colors.white,
                     ),
                   ),
-                  
+
                   SizedBox(height: 8),
-                  
+
                   // Product Category
                   Text(
                     'Category: ${widget.product.category}',
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: Colors.white,
-                    ),
+                    style: TextStyle(fontSize: 16, color: Colors.white),
                   ),
-                  
+
                   SizedBox(height: 12),
-                  
+
                   // Product Price
                   Row(
                     children: [
@@ -101,7 +112,10 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                       SizedBox(width: 12),
                       if (widget.product.oldPrice > widget.product.newPrice)
                         Container(
-                          padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
                           decoration: BoxDecoration(
                             color: Colors.green,
                             borderRadius: BorderRadius.circular(4),
@@ -117,9 +131,9 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                         ),
                     ],
                   ),
-                  
+
                   SizedBox(height: 20),
-                  
+
                   // Quantity Selector
                   Row(
                     children: [
@@ -150,7 +164,10 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                               },
                             ),
                             Container(
-                              padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                              padding: EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 8,
+                              ),
                               child: Text(
                                 _quantity.toString(),
                                 style: TextStyle(
@@ -170,7 +187,9 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                                 } else {
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(
-                                      content: Text('Maximum available quantity reached!'),
+                                      content: Text(
+                                        'Maximum available quantity reached!',
+                                      ),
                                       duration: Duration(seconds: 2),
                                     ),
                                   );
@@ -182,20 +201,17 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                       ),
                     ],
                   ),
-                  
+
                   SizedBox(height: 12),
-                  
+
                   // Available Stock
                   Text(
                     'Available Stock: ${widget.product.quantity}',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey,
-                    ),
+                    style: TextStyle(fontSize: 14, color: Colors.grey),
                   ),
-                  
+
                   SizedBox(height: 24),
-                  
+
                   // Product Description
                   Text(
                     'Description',
@@ -214,9 +230,9 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                       height: 1.5,
                     ),
                   ),
-                  
+
                   SizedBox(height: 16),
-                  
+
                   // Creation Date
                   Text(
                     'Listed on: ${_formatTimestamp(widget.product.createdAt)}',
@@ -242,8 +258,18 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
 
   String _getMonthName(int month) {
     const monthNames = [
-      'January', 'February', 'March', 'April', 'May', 'June',
-      'July', 'August', 'September', 'October', 'November', 'December'
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December',
     ];
     return monthNames[month - 1];
   }
@@ -254,64 +280,76 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
         Container(
           color: Colors.white,
           width: double.infinity,
-          child: widget.product.images.isEmpty
-              ? Container(
-                  height: 300,
-                  child: Center(
-                    child: Icon(
-                      Icons.image,
-                      size: 100,
-                      color: Colors.grey.shade400,
-                    ),
-                  ),
-                )
-              : CarouselSlider(
-                  options: CarouselOptions(
+          child:
+              widget.product.images.isEmpty
+                  ? Container(
                     height: 300,
-                    viewportFraction: 1.0,
-                    enlargeCenterPage: false,
-                    onPageChanged: (index, reason) {
-                      setState(() {
-                        _currentImageIndex = index;
-                      });
-                    },
-                    autoPlay: widget.product.images.length > 1,
-                    autoPlayInterval: Duration(seconds: 4),
-                  ),
-                  items: widget.product.images.map((imageUrl) {
-                    return Builder(
-                      builder: (BuildContext context) {
-                        return Container(
-                          width: MediaQuery.of(context).size.width,
-                          child: Image.network(
-                            imageUrl,
-                            fit: BoxFit.contain,
-                            errorBuilder: (context, error, stackTrace) {
-                              return Center(
-                                child: Icon(
-                                  Icons.broken_image,
-                                  size: 80,
-                                  color: Colors.grey.shade400,
-                                ),
-                              );
-                            },
-                            loadingBuilder: (context, child, loadingProgress) {
-                              if (loadingProgress == null) return child;
-                              return Center(
-                                child: CircularProgressIndicator(
-                                  value: loadingProgress.expectedTotalBytes != null
-                                      ? loadingProgress.cumulativeBytesLoaded /
-                                          (loadingProgress.expectedTotalBytes ?? 1)
-                                      : null,
-                                ),
-                              );
-                            },
-                          ),
-                        );
+                    child: Center(
+                      child: Icon(
+                        Icons.image,
+                        size: 100,
+                        color: Colors.grey.shade400,
+                      ),
+                    ),
+                  )
+                  : CarouselSlider(
+                    options: CarouselOptions(
+                      height: 300,
+                      viewportFraction: 1.0,
+                      enlargeCenterPage: false,
+                      onPageChanged: (index, reason) {
+                        setState(() {
+                          _currentImageIndex = index;
+                        });
                       },
-                    );
-                  }).toList(),
-                ),
+                      autoPlay: widget.product.images.length > 1,
+                      autoPlayInterval: Duration(seconds: 4),
+                    ),
+                    items:
+                        widget.product.images.map((imageUrl) {
+                          return Builder(
+                            builder: (BuildContext context) {
+                              return Container(
+                                width: MediaQuery.of(context).size.width,
+                                child: Image.network(
+                                  imageUrl,
+                                  fit: BoxFit.contain,
+                                  errorBuilder: (context, error, stackTrace) {
+                                    return Center(
+                                      child: Icon(
+                                        Icons.broken_image,
+                                        size: 80,
+                                        color: Colors.grey.shade400,
+                                      ),
+                                    );
+                                  },
+                                  loadingBuilder: (
+                                    context,
+                                    child,
+                                    loadingProgress,
+                                  ) {
+                                    if (loadingProgress == null) return child;
+                                    return Center(
+                                      child: CircularProgressIndicator(
+                                        value:
+                                            loadingProgress
+                                                        .expectedTotalBytes !=
+                                                    null
+                                                ? loadingProgress
+                                                        .cumulativeBytesLoaded /
+                                                    (loadingProgress
+                                                            .expectedTotalBytes ??
+                                                        1)
+                                                : null,
+                                      ),
+                                    );
+                                  },
+                                ),
+                              );
+                            },
+                          );
+                        }).toList(),
+                  ),
         ),
         if (widget.product.images.length > 1)
           Positioned(
@@ -320,23 +358,89 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
             right: 0,
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
-              children: widget.product.images.asMap().entries.map((entry) {
-                return Container(
-                  width: 8,
-                  height: 8,
-                  margin: EdgeInsets.symmetric(horizontal: 4),
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: _currentImageIndex == entry.key
-                        ? AppColors.primaryDark
-                        : Colors.grey.shade500,
-                  ),
-                );
-              }).toList(),
+              children:
+                  widget.product.images.asMap().entries.map((entry) {
+                    return Container(
+                      width: 8,
+                      height: 8,
+                      margin: EdgeInsets.symmetric(horizontal: 4),
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color:
+                            _currentImageIndex == entry.key
+                                ? AppColors.primaryDark
+                                : Colors.grey.shade500,
+                      ),
+                    );
+                  }).toList(),
             ),
           ),
       ],
     );
+  }
+
+  // Add to cart method
+  Future<void> _addToCart() async {
+    // Prevent multiple clicks
+    if (_isAddingToCart) return;
+
+    setState(() {
+      _isAddingToCart = true;
+    });
+
+    try {
+      // Create cart item
+      final cartItem = CartItem(
+        id: '', // ID will be assigned by Firestore
+        productId: widget.product.id,
+        name: widget.product.name,
+        price: widget.product.newPrice,
+        quantity: _quantity,
+        imageUrl:
+            widget.product.images.isNotEmpty ? widget.product.images[0] : '',
+        userId: _userId,
+      );
+
+      // Add to cart in Firestore
+      await _cartService.addToCart(cartItem);
+
+      // Show success message
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Added to Cart!'),
+          backgroundColor: AppColors.primaryDark,
+          duration: Duration(seconds: 2),
+          action: SnackBarAction(
+            label: 'VIEW CART',
+            textColor: Colors.white,
+            onPressed: () {
+              Get.to(CartPage());
+            },
+          ),
+        ),
+      );
+    } catch (e) {
+      // Show error message
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to add to cart: ${e.toString()}'),
+          backgroundColor: Colors.red,
+          duration: Duration(seconds: 3),
+        ),
+      );
+    } finally {
+      setState(() {
+        _isAddingToCart = false;
+      });
+    }
+  }
+
+  // Buy now method
+  void _buyNow() {
+    _addToCart().then((_) {
+      // Navigate to cart page
+      Navigator.pushNamed(context, '/cart');
+    });
   }
 
   Widget _buildBottomBar() {
@@ -357,15 +461,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
         children: [
           Expanded(
             child: OutlinedButton(
-              onPressed: () {
-                // Add to cart logic
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('Added to Cart!'),
-                    duration: Duration(seconds: 2),
-                  ),
-                );
-              },
+              onPressed: _isAddingToCart ? null : _addToCart,
               style: OutlinedButton.styleFrom(
                 side: BorderSide(color: Colors.white),
                 padding: EdgeInsets.symmetric(vertical: 16),
@@ -373,22 +469,30 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                   borderRadius: BorderRadius.circular(8),
                 ),
               ),
-              child: Text(
-                'Add to Cart',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
-              ),
+              child:
+                  _isAddingToCart
+                      ? SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(
+                          color: Colors.white,
+                          strokeWidth: 2,
+                        ),
+                      )
+                      : Text(
+                        'Add to Cart',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
             ),
           ),
           SizedBox(width: 16),
           Expanded(
             child: ElevatedButton(
-              onPressed: () {
-                // Buy now logic
-              },
+              onPressed: _isAddingToCart ? null : _buyNow,
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primary,
                 foregroundColor: Colors.white,
@@ -399,10 +503,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
               ),
               child: Text(
                 'Buy Now',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
               ),
             ),
           ),
