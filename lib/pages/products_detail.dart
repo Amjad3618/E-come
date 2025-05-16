@@ -3,9 +3,11 @@ import 'package:carousel_slider/carousel_slider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:get/get.dart';
 import 'package:get/get_core/src/get_main.dart';
+import '../models/buy_now_model.dart';
 import '../models/product_model.dart';
 import '../models/cart_model.dart';
 import '../utils/color.dart';
+import '../widgets/buyer_widget.dart';
 import 'cart_page.dart';
 
 class ProductDetailScreen extends StatefulWidget {
@@ -436,6 +438,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
   }
 
   // Buy now method
+  // ignore: unused_element
   void _buyNow() {
     _addToCart().then((_) {
       // Navigate to cart page
@@ -491,21 +494,50 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
           ),
           SizedBox(width: 16),
           Expanded(
-            child: ElevatedButton(
-              onPressed: _isAddingToCart ? null : _buyNow,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                foregroundColor: Colors.white,
-                padding: EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-              child: Text(
-                'Buy Now',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-              ),
-            ),
+            child:ElevatedButton(
+  onPressed: () {
+    // Show the bottom sheet using showModalBottomSheet
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true, // Allow the bottom sheet to be larger
+      backgroundColor: Colors.transparent,
+      builder: (context) => BuyNowBottomSheet(
+        productId: widget.product.id,
+        productName: widget.product.name,
+        productImage: widget.product.images.isNotEmpty ? widget.product.images[0] : '',
+        productPrice: widget.product.newPrice,
+        quantity: _quantity,
+        orderService: OrderService(), // You might need to get this from your dependency injection system
+      ),
+    ).then((result) {
+      // Handle the result when the bottom sheet is closed
+      if (result != null && result['success'] == true) {
+        // Show success message or navigate to order confirmation
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Order placed successfully! Order ID: ${result['orderId']}'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        
+        // Optionally navigate to order confirmation page
+        // Navigator.pushNamed(context, '/order-confirmation', arguments: result['orderId']);
+      }
+    });
+  },
+  style: ElevatedButton.styleFrom(
+    backgroundColor: AppColors.primary,
+    foregroundColor: Colors.white,
+    padding: EdgeInsets.symmetric(vertical: 16),
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(8),
+    ),
+  ),
+  child: Text(
+    'Buy Now',
+    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+  ),
+),
           ),
         ],
       ),

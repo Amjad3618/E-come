@@ -1,6 +1,9 @@
+import 'package:e_com_1/pages/order_details.dart';
 import 'package:flutter/material.dart';
 import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:get/get.dart';
+import 'package:get/get_core/src/get_main.dart';
 
 import '../models/product_model.dart';
 import '../utils/color.dart';
@@ -136,7 +139,9 @@ class _HomeScreenState extends State<HomeScreen> {
         actions: [
           IconButton(
             icon: Icon(Icons.search, color: Colors.white),
-            onPressed: () {},
+            onPressed: () {
+Get.to(() => UserOrdersPage());
+            },
           ),
           IconButton(
             icon: Icon(Icons.notifications_outlined, color: Colors.white),
@@ -526,7 +531,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     Row(
                       children: [
                         Text(
-                          '₹${product.newPrice}',
+                          'Rs ${product.newPrice}',
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 18,
@@ -536,7 +541,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         SizedBox(width: 8),
                         if (product.oldPrice > product.newPrice)
                           Text(
-                            '₹${product.oldPrice}',
+                            '${product.oldPrice}',
                             style: TextStyle(
                               fontWeight: FontWeight.w400,
                               fontSize: 14,
