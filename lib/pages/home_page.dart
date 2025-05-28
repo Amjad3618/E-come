@@ -1,12 +1,13 @@
-import 'package:e_com_1/pages/order_details.dart';
+// ignore_for_file: avoid_print
+
 import 'package:flutter/material.dart';
 import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:get/get.dart';
-import 'package:get/get_core/src/get_main.dart';
 
 import '../models/product_model.dart';
 import '../utils/color.dart';
+import 'order_page.dart';
 import 'product_category_page.dart';
 import 'products_detail.dart';
 
@@ -40,7 +41,7 @@ class _HomeScreenState extends State<HomeScreen> {
       'textColor': Colors.green.shade900,
     },
   ];
-  
+
   late Timer _timer;
   bool _isLoading = true;
   List<Map<String, dynamic>> _categories = [];
@@ -56,7 +57,7 @@ class _HomeScreenState extends State<HomeScreen> {
       } else {
         _currentPage = 0;
       }
-      
+
       if (_pageController.hasClients) {
         _pageController.animateToPage(
           _currentPage,
@@ -74,20 +75,20 @@ class _HomeScreenState extends State<HomeScreen> {
   // Method to fetch categories from Firestore
   Future<void> _fetchCategories() async {
     try {
-      final QuerySnapshot snapshot = await FirebaseFirestore.instance
-          .collection('shop_categories')
-          .get();
+      final QuerySnapshot snapshot =
+          await FirebaseFirestore.instance.collection('shop_categories').get();
 
       setState(() {
-        _categories = snapshot.docs.map((doc) {
-          final data = doc.data() as Map<String, dynamic>;
-          return {
-            'id': doc.id,
-            'name': data['name'] ?? 'Unknown Category',
-            'imageUrl': data['image'] ?? '',
-            'desc': data['desc'] ?? '',
-          };
-        }).toList();
+        _categories =
+            snapshot.docs.map((doc) {
+              final data = doc.data() as Map<String, dynamic>;
+              return {
+                'id': doc.id,
+                'name': data['name'] ?? 'Unknown Category',
+                'imageUrl': data['image'] ?? '',
+                'desc': data['desc'] ?? '',
+              };
+            }).toList();
         _isLoading = false;
       });
     } catch (e) {
@@ -101,14 +102,12 @@ class _HomeScreenState extends State<HomeScreen> {
   // Method to fetch products from Firestore
   Future<void> _fetchProducts() async {
     try {
-      final QuerySnapshot snapshot = await FirebaseFirestore.instance
-          .collection('shop_products')
-          .get();
+      final QuerySnapshot snapshot =
+          await FirebaseFirestore.instance.collection('shop_products').get();
 
       setState(() {
-        _products = snapshot.docs
-            .map((doc) => Product.fromFirestore(doc))
-            .toList();
+        _products =
+            snapshot.docs.map((doc) => Product.fromFirestore(doc)).toList();
       });
     } catch (e) {
       print('Error fetching products: $e');
@@ -131,16 +130,13 @@ class _HomeScreenState extends State<HomeScreen> {
         backgroundColor: AppColors.primaryDark,
         title: Text(
           'E---->COM',
-          style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-          ),
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
         actions: [
           IconButton(
             icon: Icon(Icons.search, color: Colors.white),
             onPressed: () {
-Get.to(() => UserOrdersPage());
+              Get.to(() => OrdersScreen());
             },
           ),
           IconButton(
@@ -202,15 +198,18 @@ Get.to(() => UserOrdersPage());
                                 SizedBox(height: 16),
                                 ElevatedButton(
                                   onPressed: () {},
-                                  child: Text('Shop Now'),
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: banner['textColor'],
                                     foregroundColor: Colors.white,
-                                    padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal: 24,
+                                      vertical: 12,
+                                    ),
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(8),
                                     ),
                                   ),
+                                  child: Text('Shop Now'),
                                 ),
                               ],
                             ),
@@ -233,9 +232,10 @@ Get.to(() => UserOrdersPage());
                             margin: EdgeInsets.symmetric(horizontal: 4),
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
-                              color: _currentPage == index
-                                  ? AppColors.primaryDark
-                                  : Colors.black.withOpacity(0.5),
+                              color:
+                                  _currentPage == index
+                                      ? AppColors.primaryDark
+                                      : Colors.black.withOpacity(0.5),
                             ),
                           ),
                         ),
@@ -244,9 +244,9 @@ Get.to(() => UserOrdersPage());
                   ],
                 ),
               ),
-              
+
               SizedBox(height: 20),
-              
+
               // Categories Section
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -268,30 +268,35 @@ Get.to(() => UserOrdersPage());
                 ],
               ),
               SizedBox(height: 10),
-              
+
               // Categories from Firestore
               _isLoading
-                ? Center(child: CircularProgressIndicator())
-                : _categories.isEmpty
-                  ? Center(child: Text('No categories found', style: TextStyle(color: Colors.white)))
-                  : SizedBox(
-                      height: 120,
-                      child: ListView.builder(
-                        scrollDirection: Axis.horizontal,
-                        itemCount: _categories.length,
-                        itemBuilder: (context, index) {
-                          final category = _categories[index];
-                          return _buildCategoryItemFromFirestore(
-                            category['imageUrl'],
-                            category['name'],
-                            category['id'],
-                          );
-                        },
-                      ),
+                  ? Center(child: CircularProgressIndicator())
+                  : _categories.isEmpty
+                  ? Center(
+                    child: Text(
+                      'No categories found',
+                      style: TextStyle(color: Colors.white),
                     ),
-              
+                  )
+                  : SizedBox(
+                    height: 120,
+                    child: ListView.builder(
+                      scrollDirection: Axis.horizontal,
+                      itemCount: _categories.length,
+                      itemBuilder: (context, index) {
+                        final category = _categories[index];
+                        return _buildCategoryItemFromFirestore(
+                          category['imageUrl'],
+                          category['name'],
+                          category['id'],
+                        );
+                      },
+                    ),
+                  ),
+
               SizedBox(height: 20),
-              
+
               // Featured Products
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -304,22 +309,23 @@ Get.to(() => UserOrdersPage());
                       color: Colors.white,
                     ),
                   ),
-                  TextButton(
-                    onPressed: () {},
-                    child: Text('See All'),
-                  ),
+                  TextButton(onPressed: () {}, child: Text('See All')),
                 ],
               ),
               SizedBox(height: 16),
-              
+
               // Display products from Firestore
               _products.isEmpty
-                ? Center(
-                    child: _isLoading
-                      ? CircularProgressIndicator()
-                      : Text('No products found', style: TextStyle(color: Colors.white))
+                  ? Center(
+                    child:
+                        _isLoading
+                            ? CircularProgressIndicator()
+                            : Text(
+                              'No products found',
+                              style: TextStyle(color: Colors.white),
+                            ),
                   )
-                : GridView.builder(
+                  : GridView.builder(
                     shrinkWrap: true,
                     physics: NeverScrollableScrollPhysics(),
                     gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
@@ -338,14 +344,16 @@ Get.to(() => UserOrdersPage());
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => ProductDetailScreen(product: product),
+                              builder:
+                                  (context) =>
+                                      ProductDetailScreen(product: product),
                             ),
                           );
                         },
                       );
                     },
                   ),
-              
+
               SizedBox(height: 24),
             ],
           ),
@@ -355,7 +363,11 @@ Get.to(() => UserOrdersPage());
   }
 
   // Method to build category items from Firestore data
-  Widget _buildCategoryItemFromFirestore(String imageUrl, String label, String categoryId) {
+  Widget _buildCategoryItemFromFirestore(
+    String imageUrl,
+    String label,
+    String categoryId,
+  ) {
     return GestureDetector(
       onTap: () {
         // Navigate to category products page
@@ -373,7 +385,10 @@ Get.to(() => UserOrdersPage());
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 color: AppColors.primaryDark.withOpacity(0.8),
-                border: Border.all(color: Colors.white.withOpacity(0.2), width: 2),
+                border: Border.all(
+                  color: Colors.white.withOpacity(0.2),
+                  width: 2,
+                ),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withOpacity(0.2),
@@ -385,37 +400,38 @@ Get.to(() => UserOrdersPage());
               ),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(40),
-                child: imageUrl.isNotEmpty 
-                  ? Image.network(
-                      imageUrl,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) {
-                        print("Error loading image: $error");
-                        return Icon(
-                          Icons.category,
-                          size: 40,
-                          color: Colors.white,
-                        );
-                      },
-                      loadingBuilder: (context, child, loadingProgress) {
-                        if (loadingProgress == null) return child;
-                        return Center(
-                          child: CircularProgressIndicator(
-                            value: loadingProgress.expectedTotalBytes != null
-                                ? loadingProgress.cumulativeBytesLoaded / 
-                                  (loadingProgress.expectedTotalBytes ?? 1)
-                                : null,
-                            strokeWidth: 2.0,
-                            color: Colors.white,
-                          ),
-                        );
-                      },
-                    )
-                  : Icon(
-                      Icons.category,
-                      size: 40,
-                      color: Colors.white,
-                    ),
+                child:
+                    imageUrl.isNotEmpty
+                        ? Image.network(
+                          imageUrl,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) {
+                            print("Error loading image: $error");
+                            return Icon(
+                              Icons.category,
+                              size: 40,
+                              color: Colors.white,
+                            );
+                          },
+                          loadingBuilder: (context, child, loadingProgress) {
+                            if (loadingProgress == null) return child;
+                            return Center(
+                              child: CircularProgressIndicator(
+                                value:
+                                    loadingProgress.expectedTotalBytes != null
+                                        ? loadingProgress
+                                                .cumulativeBytesLoaded /
+                                            (loadingProgress
+                                                    .expectedTotalBytes ??
+                                                1)
+                                        : null,
+                                strokeWidth: 2.0,
+                                color: Colors.white,
+                              ),
+                            );
+                          },
+                        )
+                        : Icon(Icons.category, size: 40, color: Colors.white),
               ),
             ),
             SizedBox(height: 8),
@@ -439,21 +455,27 @@ Get.to(() => UserOrdersPage());
 
   // Navigation method for category products
   void _navigateToCategoryProducts(String categoryId, String categoryName) {
-    print('Navigating to products in category: $categoryName (ID: $categoryId)');
-    
+    print(
+      'Navigating to products in category: $categoryName (ID: $categoryId)',
+    );
+
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => CategoryProductsScreen(
-          categoryId: categoryId,
-          categoryName: categoryName,
-        ),
+        builder:
+            (context) => CategoryProductsScreen(
+              categoryId: categoryId,
+              categoryName: categoryName,
+            ),
       ),
     );
   }
 
   // Updated method to build product card
-  Widget _buildProductCard({required Product product, required VoidCallback onPressed}) {
+  Widget _buildProductCard({
+    required Product product,
+    required VoidCallback onPressed,
+  }) {
     return GestureDetector(
       onTap: onPressed,
       child: Container(
@@ -473,41 +495,48 @@ Get.to(() => UserOrdersPage());
                   borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
                 ),
                 width: double.infinity,
-                child: product.images.isNotEmpty
-                  ? ClipRRect(
-                      borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
-                      child: Image.network(
-                        product.images[0],
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) {
-                          return Center(
-                            child: Icon(
-                              Icons.image,
-                              size: 60,
-                              color: Colors.grey.shade400,
-                            ),
-                          );
-                        },
-                        loadingBuilder: (context, child, loadingProgress) {
-                          if (loadingProgress == null) return child;
-                          return Center(
-                            child: CircularProgressIndicator(
-                              value: loadingProgress.expectedTotalBytes != null
-                                  ? loadingProgress.cumulativeBytesLoaded / 
-                                    (loadingProgress.expectedTotalBytes ?? 1)
-                                  : null,
-                            ),
-                          );
-                        },
-                      ),
-                    )
-                  : Center(
-                      child: Icon(
-                        Icons.image,
-                        size: 60,
-                        color: Colors.grey.shade400,
-                      ),
-                    ),
+                child:
+                    product.images.isNotEmpty
+                        ? ClipRRect(
+                          borderRadius: BorderRadius.vertical(
+                            top: Radius.circular(12),
+                          ),
+                          child: Image.network(
+                            product.images[0],
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) {
+                              return Center(
+                                child: Icon(
+                                  Icons.image,
+                                  size: 60,
+                                  color: Colors.grey.shade400,
+                                ),
+                              );
+                            },
+                            loadingBuilder: (context, child, loadingProgress) {
+                              if (loadingProgress == null) return child;
+                              return Center(
+                                child: CircularProgressIndicator(
+                                  value:
+                                      loadingProgress.expectedTotalBytes != null
+                                          ? loadingProgress
+                                                  .cumulativeBytesLoaded /
+                                              (loadingProgress
+                                                      .expectedTotalBytes ??
+                                                  1)
+                                          : null,
+                                ),
+                              );
+                            },
+                          ),
+                        )
+                        : Center(
+                          child: Icon(
+                            Icons.image,
+                            size: 60,
+                            color: Colors.grey.shade400,
+                          ),
+                        ),
               ),
             ),
             Expanded(

@@ -11,7 +11,6 @@ import 'package:e_com_1/widgets/password_form.dart';
 import 'package:e_com_1/utils/color.dart';
 import 'package:e_com_1/widgets/fancy_text.dart';
 
-import '../services/auth_services.dart';
 
 class SignUpPage extends StatelessWidget {
   const SignUpPage({super.key});
