@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../utils/color.dart';
 import '../models/cart_model.dart';
+import 'check_out_page.dart';
 
 class CartPage extends StatefulWidget {
   const CartPage({Key? key}) : super(key: key);
@@ -151,9 +152,27 @@ class _CartPageState extends State<CartPage> {
 
   // Navigate to checkout
   void _proceedToCheckout() {
-    // Navigate to checkout page
-    
+  if (_cartItems.isEmpty) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Your cart is empty!'),
+        backgroundColor: Colors.red,
+      ),
+    );
+    return;
   }
+
+  // Navigate to checkout page with cart items and totals
+  Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (context) => CheckoutPage(
+        cartItems: _cartItems,
+        cartTotals: _cartTotals,
+      ),
+    ),
+  );
+}
 
   @override
   Widget build(BuildContext context) {
@@ -253,11 +272,14 @@ class _CartPageState extends State<CartPage> {
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ),
-                  child: Text(
-                    'Proceed to Checkout',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
+                  child: InkWell(
+                    onTap: _proceedToCheckout,
+                    child: Text(
+                      'Proceed to Checkout',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                 ),

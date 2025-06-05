@@ -210,6 +210,8 @@ class OrderModel {
       deliveredDate = now;
     }
   }
+
+  static fromMap(Map<String, dynamic> map) {}
 }
 
 // Service class to handle order operations with Firestore
